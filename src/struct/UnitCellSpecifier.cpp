@@ -2,9 +2,14 @@
 #include "chain.hpp"
 #include <sstream>
 #include <stdexcept>
-#include "util.hpp"
+#include <string>
+#include <format>
 
 namespace CellGeometry {
+
+std::string pprint(ipos_t x){
+	return std::format("[{} {} {}]",x[0],x[1],x[2]);
+}
 
 // utility
 void UnitCellSpecifier::try_insert_position(
@@ -14,7 +19,7 @@ void UnitCellSpecifier::try_insert_position(
 	bool status = hmap.insert(x,sl);
 	if (status == false){
 		std::stringstream s;
-		s<<"Failed to add "<<obj_name<<" at "<<x<<": ";
+		s<<"Failed to add "<<obj_name<<" at "<<pprint(x)<<": ";
 		s<<"There is already a(n) "<<obj_name<<" there\n";
 		throw std::runtime_error(s.str());	
 	}
@@ -30,23 +35,23 @@ void throw_bad_boundary(CellSpecifier<_order> p, ipos_t missing_point) {
 }
 
 // constructors
-UnitCellSpecifier::UnitCellSpecifier(const arma::imat33& lattice_vectors_) :
+UnitCellSpecifier::UnitCellSpecifier(const imat33_t& lattice_vectors_) :
 	lattice_vectors(lattice_vectors_),
-	UPV(ComputeSmithNormalForm(snfmat(lattice_vectors))),
+	UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors))),
 	point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {}
 
 UnitCellSpecifier::UnitCellSpecifier(const snfmat& lattice_vectors_) :
-	lattice_vectors(lattice_vectors_.to_armadillo()),
+	lattice_vectors(from_snfmat(lattice_vectors_)),
 	UPV(ComputeSmithNormalForm(lattice_vectors_)),
 	point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {}
 
 UnitCellSpecifier::UnitCellSpecifier(
 		const UnitCellSpecifier& other,
-		const arma::imat33& cellspec) : 
+		const imat33_t& cellspec) : 
 	lattice_vectors(other.lattice_vectors * cellspec),
-	UPV(ComputeSmithNormalForm(snfmat(lattice_vectors))),
+	UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors))),
 	point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {
 	// populate the cells

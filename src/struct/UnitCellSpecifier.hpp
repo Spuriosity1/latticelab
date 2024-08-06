@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "chain.hpp"
+#include "matrix.hpp"
 #include "modulus.hpp"
 
 namespace CellGeometry {
@@ -32,25 +33,40 @@ typedef int sl_t;
 ///  FORWARD DECLARATIONS
 /////////////////////////////////////////////
 /////////////////////////////////////////////
+template<typename T>
+inline vector3::mat33<T> from_snfmat(SmithNormalFormCalculator::Matrix<T> m){
+	vector3::mat33<T> out;
+	for (int i=0; i<3; i++)
+		for (int j=0; j<3; j++)
+			out(i,j) = m[i][j];
+	return out;
+}
 
-
+template<typename T>
+inline SmithNormalFormCalculator::Matrix<T> to_snfmat(vector3::mat33<T>m){
+	SmithNormalFormCalculator::Matrix<T> out;
+	for (int i=0; i<3; i++)
+		for (int j=0; j<3; j++)
+			out[i][j] = m(i,j);
+	return out;
+}
 
 // TODO move to the subproject
 struct ArmaSmithDecomposition {
 	ArmaSmithDecomposition(
 			SmithNormalFormCalculator::SmithNormalFormDecomposition<arma::sword>decomp ) : 
-		L(decomp.L.to_armadillo()),
-		Linv(SmithNormalFormCalculator::inverse(decomp.L).to_armadillo()),
-		D(arma::diagvec(decomp.D.to_armadillo())),
-		R(decomp.R.to_armadillo()),
-		Rinv(SmithNormalFormCalculator::inverse(decomp.R).to_armadillo())
+		L(from_snfmat(decomp.L)),
+		Linv(from_snfmat(SmithNormalFormCalculator::inverse(decomp.L))),
+		D(from_snfmat(decomp.D).diagonal()),
+		R(from_snfmat(decomp.R)),
+		Rinv(from_snfmat(SmithNormalFormCalculator::inverse(decomp.R)))
 	{}
 
-	const arma::imat33 L;
-	const arma::imat33 Linv;
-	const arma::ivec3 D;
-	const arma::imat33 R;
-	const arma::imat33 Rinv;
+	const imat33_t L;
+	const imat33_t Linv;
+	const ipos_t D;
+	const imat33_t R;
+	const imat33_t Rinv;
 };
 
 /** A specialised "hashmap" implementation
@@ -125,7 +141,7 @@ struct pointMap {
 };
 
 struct UnitCellSpecifier {	
-	UnitCellSpecifier(const arma::imat33& lattice_vectors_);
+	UnitCellSpecifier(const imat33_t& lattice_vectors_);
 	UnitCellSpecifier(const snfmat& lattice_vectors_);/**
 	 * Creates a new unitcell from the points of the old one, with
 	 * new primitive_vectors such that
@@ -135,11 +151,11 @@ struct UnitCellSpecifier {
 	 * @param other -> another UnitCellSpecifier to build from
 	 * @param cellspec -> the change of basis matrix
 	 */
-	UnitCellSpecifier(const UnitCellSpecifier& other, const arma::imat33& cellspec);
+	UnitCellSpecifier(const UnitCellSpecifier& other, const imat33_t& cellspec);
 
 	// The lattice vectors (columns are interpreted as vectors)
 	// [ a1  a2  a3]
-	const arma::imat33 lattice_vectors;
+	const imat33_t lattice_vectors;
 	// Smith decomposition of lattice_vectors
 	const ArmaSmithDecomposition UPV;
 

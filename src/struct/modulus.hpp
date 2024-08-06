@@ -22,9 +22,16 @@ std::lldiv_t moddiv(V x, V base) {
 }
 
 
-inline std::pair<arma::ivec3, arma::ivec3> moddiv(arma::ivec3 x, arma::ivec3 base){
-	std::pair<arma::ivec3, arma::ivec3> retval;
-	for (size_t i=0; i<3; i++){
+template <typename T>
+concept has_static_size = requires(T) {
+        { T::size() } -> std::convertible_to<size_t>;
+    };
+
+template<typename T>
+requires has_static_size<T>
+inline std::pair<T, T> moddiv(T x, T base){
+	std::pair<T, T> retval;
+	for (size_t i=0; i<x.size(); i++){
 		std::lldiv_t tmp = moddiv(x[i], base[i]);
 		retval.first[i]= tmp.quot; 
 		retval.second[i] = tmp.rem;

@@ -1,18 +1,23 @@
 #pragma once
-
-
-#include <armadillo>
+#include <map>
+#include <vector>
 
 typedef unsigned int idx_t;
+/*
+#include <armadillo>
+
 typedef arma::ivec3 ipos_t;
+typedef arma::imat33 imat33_t;
+*/
+#include "vec3.hpp"
+typedef vector3::vec3<long long int> ipos_t;
+typedef vector3::mat33<long long int> imat33_t;
 
-// Cursed chicken-egg shenanigans:
-// Need to forward declare this
 template <int order>
-struct CellMultPair;
+struct Cell;
 
 template <int order>
-using Chain =  std::vector<CellMultPair<order>>;
+using Chain =  std::map<Cell<order>*, int>;
 
 // Data Storage class (inherit from these for physical simulations)
 struct GeometricObject{
@@ -40,11 +45,33 @@ struct Cell<3> : public GeometricObject {
 };
 
 template <int order>
-struct CellMultPair{
-	int multiplier; // generically +- 1
-	const Cell<order>* cell;
-};
+requires (order > 1)
+Chain<order-1> d(const Chain<order>& chain) {
+	// computes a sum over the cells
+	Chain<order-1> retval;
+	for (const auto& [cell, mult] : chain){
+		for (const auto& [cell_b, mult_b] : cell->boundary) {
+			retval[cell_b] += mult_b*mult;
+		}
+	}
+	return retval;
+}
 
+template <int order>
+requires (order < 3)
+Chain<order+1> co_d(const Chain<order>& chain) {
+	Chain<order+1> retval;
+	for (const auto& [cell, mult] : chain){
+		for (const auto& [cell_b, mult_b] : cell->coboundary) {
+			retval[cell_b] += mult_b*mult;
+		}
+	}
+	return retval;
+}
+
+
+// An ordered pair of an integer multiplier and a relative position
+// (pointing to the n-1 cell)
 struct VectorSignPair {
 	int multiplier;
 	ipos_t relative_position;

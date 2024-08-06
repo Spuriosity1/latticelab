@@ -12,8 +12,8 @@ using namespace CellGeometry;
 
 TEST(PointMap, slMap) {
 	pointMap pmap(ipos_t({3,4,5}));
-	ipos_t x = {0,0,0};
-	ipos_t y = {2,3,4};
+	ipos_t x({0,0,0});
+	ipos_t y({2,3,4});
 	pmap.insert(x, 4);
 	pmap.insert(y, 5);
 	EXPECT_EQ(pmap[x], 4);
@@ -23,7 +23,7 @@ TEST(PointMap, slMap) {
 
 TEST(PointMap, slMapDoubling) {
 	pointMap pmap(ipos_t({3,4,5}));
-	ipos_t x = {0,0,0};
+	ipos_t x({0,0,0});
 	pmap.insert(x, 4);
 	EXPECT_EQ(pmap.insert(x, 5), false);
 };
@@ -39,11 +39,11 @@ TEST(PointMap, slMapBadAccess) {
 };
 
 TEST(UnitCellSpecifier, Cubic) {
-	UnitCellSpecifier cell(arma::imat33({
+	UnitCellSpecifier cell(imat33_t::from_cols(
 				{2,0,0},
 				{0,2,0},
 				{0,0,2}
-				}));
+				));
 	PointSpec pointspec;
 	pointspec.position = {0,0,0};	
 	cell.add_point(pointspec);

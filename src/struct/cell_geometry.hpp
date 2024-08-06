@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "modulus.hpp"
+#include "vec3.hpp"
 #include "UnitCellSpecifier.hpp"
 
 
@@ -48,11 +49,11 @@ struct PeriodicLattice {
 	 */
 	PeriodicLattice(
 			const UnitCellSpecifier& primitive,
-			const arma::imat33& supercell
+			const imat33_t& supercell
 			);
 
 	// Const properties
-	const arma::imat33 cell_vectors;
+	const imat33_t cell_vectors;
 
 	// Object access
 	Point* get_point_at(const ipos_t &R);
@@ -68,7 +69,7 @@ struct PeriodicLattice {
 	Vol* get_vol_at(const arma::ivec3& I, int sl);
 
 	// Size of the supercell
-	arma::ivec3 size() const {return LDW.D;} 
+	ipos_t size() const {return LDW.D;} 
 	int size(int idx) const {
 		assert(idx >= 0 && idx < 3);
 		return LDW.D[idx];
@@ -88,7 +89,7 @@ struct PeriodicLattice {
 	// Populates all cells of the lattice object at their correct positions
 	void populate_cells();
 	// Links (n)-cells with their boundary (n-1)-cells
-	void link_boundaries();
+	void connect_boundaries();
 	// Links (n)-cells with their coboundary (n+1)-cells
 	void link_coboundaries();
 
@@ -114,12 +115,12 @@ template<
 	>
 PeriodicLattice<Point, Link, Plaq, Vol>::PeriodicLattice(
 	const UnitCellSpecifier& specified_primitive,
-	const arma::imat33& supercell
+	const imat33_t& supercell
 ) : 
 	// Store the supercell's lattice vectors here by calling the base class constructor
 	cell_vectors(specified_primitive.lattice_vectors * supercell),
 	// Smith decopose the supercell spec to find a primitive cell that aligns nicely with the supercell
-	LDW(ComputeSmithNormalForm( snfmat(supercell))),
+	LDW(ComputeSmithNormalForm( to_snfmat(supercell))),
 	// Store the new primitve cell
 	primitive_spec( specified_primitive,  LDW.Linv )
 {
@@ -194,33 +195,21 @@ template<
 	std::derived_from<Cell<2>> Plaq  ,
 	std::derived_from<Cell<3>> Vol   
 	>
-void PeriodicLattice<Point, Link, Plaq, Vol>::link_boundaries(){ 
+void PeriodicLattice<Point, Link, Plaq, Vol>::connect_boundaries(){ 
 	// Second Pass: Stitch together the boundaries		
 	arma::ivec3 IDX = {0,0,0};
 	for (IDX[0]=0; IDX[0]<this->size(0); IDX[0]++){
 	for (IDX[1]=1; IDX[1]<this->size(1); IDX[1]++){
 	for (IDX[2]=2; IDX[2]<this->size(2); IDX[2]++){
 		// Iterate over link sublattices
-		for (int sl=0; sl<primitive_spec.links.size(); sl++){
-			const auto& linkspec = primitive_spec.links[sl]; // link reference
+		for (int sl=0; sl<primitive_spec.num_link_sl(); sl++){
+			const auto& linkspec = primitive_spec.link_no(sl); // link reference
 			for (auto& bp : linkspec.boundary) {
-				CellMultPair<0> tmp;
-				tmp.multiplier = bp.multiplier;
-				tmp.cell = this->get_point_at(linkspec.position + bp.relative_position);
-				this->link_at(IDX, sl)->boundary.push_back(tmp);
+				auto cell = this->get_point_at(linkspec.position + bp.relative_position);
+				this->link_at(IDX, sl)->boundary[cell] = bp.multiplier;
 			}
 		}
 
-		// Iterate over link sublattices
-		for (int sl=0; sl<primitive_spec.plaqs.size(); sl++){
-			const auto& plaqspec = primitive_spec.links[sl]; // link reference
-			for (auto& bp : plaqspec.boundary) {
-				CellMultPair<1> tmp;
-				tmp.multiplier = bp.multiplier;
-				tmp.cell = this->get_point_at(plaqspec.position + bp.relative_position);
-				this->plaq_at(IDX, sl)->boundary.push_back(tmp);
-			}
-		}
 	}}}
 }
 

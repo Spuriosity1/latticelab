@@ -1,4 +1,6 @@
-struct_source = ['geometry.cpp']
+struct_source = [
+'UnitCellSpecifier.cpp'
+]
 
 project_sources += struct_source
 

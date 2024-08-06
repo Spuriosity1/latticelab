@@ -1,0 +1,6 @@
+[submodule "third_party/smith_normal_form"]
+	path = third_party/smith_normal_form
+	url = https://github.com/kb-math/smith_normal_form.git
+[submodule "subprojects/smith_normal_form"]
+	path = subprojects/smith_normal_form
+	url = https://github.com/kb-math/smith_normal_form.git

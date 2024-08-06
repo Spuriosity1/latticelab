@@ -1,6 +1,6 @@
 project('qsi_defect_pbc', 'cpp',
   version: '1.0.0',
-  meson_version : '>= 0.58.0',
+  meson_version : '>= 1.5.0',
   default_options : [ 'warning_level=3', 'buildtype=debugoptimized', 'cpp_std=c++2a' ]
 )
 
@@ -16,9 +16,20 @@ project_lib = []
 
 # add further include dirs here
 
+# build dependencies
+snf_project = subproject('smith_normal_form', default_options: [
+  'build-armadillo=true'
+  ])
+snf_dep = snf_project.get_variable('snf_dep')
+
+# import the #define directives
+cpp_proj_arguments = snf_project.get_variable('cpp_proj_arguments')
+add_project_arguments(cpp_proj_arguments, language : 'cpp')
+
 
 global_deps = [
-  dependency('Armadillo', required: true)
+  dependency('Armadillo', required: true),
+  snf_dep
   ]
 
 # builds libraries
@@ -29,6 +40,7 @@ subdir('src')
 if get_option('enable-tests')
   gtest = subproject('gtest')
   subdir('tests')
+  subdir('interactive_tests')
 endif
 
 # builds the main executable

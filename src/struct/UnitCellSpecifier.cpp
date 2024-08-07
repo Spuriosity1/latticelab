@@ -183,7 +183,7 @@ void UnitCellSpecifier::add_vol(const VolSpec& p){
 	// check that boundary is resolvable	
 	for (const auto& dp : p.boundary){
 		ipos_t x = wrap_copy(p.position + dp.relative_position);
-		if (!is_vol(x)){ throw_bad_boundary(p,x); }
+		if (!is_plaq(x)){ throw_bad_boundary(p,x); }
 	}
 }
 

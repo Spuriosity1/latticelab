@@ -20,7 +20,8 @@ add_global_arguments('-DDEBUG', language : 'cpp')
 
 # build dependencies
 snf_project = subproject('smith_normal_form', default_options: [
-  'build-armadillo=true'
+  'build-armadillo=true',
+  'enable-tests=false'
   ])
 snf_dep = snf_project.get_variable('snf_dep')
 

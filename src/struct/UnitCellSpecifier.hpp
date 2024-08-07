@@ -44,7 +44,7 @@ inline vector3::mat33<T> from_snfmat(SmithNormalFormCalculator::Matrix<T> m){
 
 template<typename T>
 inline SmithNormalFormCalculator::Matrix<T> to_snfmat(vector3::mat33<T>m){
-	SmithNormalFormCalculator::Matrix<T> out;
+	SmithNormalFormCalculator::Matrix<T> out(3,3);
 	for (int i=0; i<3; i++)
 		for (int j=0; j<3; j++)
 			out[i][j] = m(i,j);
@@ -74,72 +74,40 @@ struct ArmaSmithDecomposition {
  * form nx, ny, nz, entrywise 0 <= nx < Lx
  *
  */
-struct pointMap {
-	pointMap(const ipos_t& L, const size_t max_memory=2000):
-	L(L),
-	max_memory(max_memory)
-	{
-		assert(L[0] > 0);
-		assert(L[1] > 0);
-		assert(L[2] > 0);
-		this->values.resize(L[0]*L[1]*L[2]);
-		for (auto& v : values){
-			v = -1;
-		}
-		if ( static_cast<size_t>(L[0]*L[1]*L[2]) > max_memory ) {
-			throw std::out_of_range("Unit cell is to large");
-		}
-	}
 
+class pointMap {
+public:
+	pointMap(const ipos_t& L_, const size_t max_memory_=2000);
 	/**
 	 * Attempts to insert sublattice 'value' at position 'key'.
 	 * Returns 'true' if the value was overwritten
 	 */
-	bool insert(ipos_t& key, sl_t value){
-		assert_inbounds(key);
-		sl_t& v = values[(key[2]*L[1]+key[1])*L[0]+key[0]];
-		if (v == -1){
-			v = value;
-			return true;
-		} else {
-			// Something already there
-			return false;
-		}
-	}
+	bool insert(ipos_t& key, sl_t value);
 
-	sl_t operator[](const ipos_t& key){
-#ifdef DEBUG
-		assert_inbounds(key);
-		if (values[(key[2]*L[1]+key[1])*L[0]+key[0]] == -1){
-			throw std::out_of_range("Sublattice is not initialised");
-		}
-#endif
-		return values[(key[2]*L[1]+key[1])*L[0]+key[0]];
-	}
+	// Fast / dangerous access methods (bounds check only enabled buy DEBUG)
+	sl_t& operator[](const ipos_t& key);
+	sl_t operator[](const ipos_t& key) const;
+	
+	// always does bounds check
+	sl_t at(const ipos_t& key) const;
+	// method throws if key is not defined
+	sl_t get_sl(const ipos_t& key);
 
 	const ipos_t L;
 	const size_t max_memory;
 
-	private:
+
+	bool inbounds(const ipos_t& x) const;
+
+protected:
+	std::vector<sl_t> values;
 /*	TODO reindex everything if there is a common factor of 2^n
  *	to save memory
  *	auto gcd(const ipos_t& x){
 		return std::gcd(std::gcd(x[0],x[1]),x[2]);
 	}*/
 
-	void assert_inbounds(const ipos_t& x) const {
-		if (x[0] < 0 || x[0] >= L[0] || x[1] < 0 
-				|| x[1] >= L[1] || x[2] < 0 || x[2]>= L[2]){
-			std::stringstream s;
-			s << "Point x = " << x << " is outside of the SL index scheme";
-			s << "(Expected 0 <= x < " << L << " )\n";
-			throw std::out_of_range(s.str());
-		}
-	}
-
-	std::vector<sl_t> values;
 };
-
 struct UnitCellSpecifier {	
 	UnitCellSpecifier(const imat33_t& lattice_vectors_);
 	UnitCellSpecifier(const snfmat& lattice_vectors_);/**
@@ -190,11 +158,11 @@ struct UnitCellSpecifier {
 	sl_t get_sl_of_plaq(const ipos_t& R){return plaq_index[R];}
 	sl_t get_sl_of_vol(const ipos_t& R){return vol_index[R];}
 
-	// Checking correctness
-	bool is_point(const ipos_t& R){return point_index[R] != -1;}
-	bool is_link(const ipos_t& R){return link_index[R] != -1;}
-	bool is_plaq(const ipos_t& R){return plaq_index[R] != -1;}
-	bool is_vol(const ipos_t& R){return vol_index[R] != -1;}
+	// Checking if initialised
+	bool is_point(const ipos_t& R){return point_index.at(R) != -1;}
+	bool is_link(const ipos_t& R){return link_index.at(R) != -1;}
+	bool is_plaq(const ipos_t& R){return plaq_index.at(R) != -1;}
+	bool is_vol(const ipos_t& R){return vol_index.at(R) != -1;}
 
 	protected:
 	std::vector<PointSpec> points;
@@ -212,7 +180,7 @@ struct UnitCellSpecifier {
 
 
 	void try_insert_position(
-			UnitCellSpecifier::point_idx_t hmap,
+			UnitCellSpecifier::point_idx_t& hmap,
 			ipos_t x, sl_t sl,
 			const char* obj_name);
 

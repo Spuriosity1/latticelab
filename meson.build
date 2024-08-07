@@ -1,7 +1,7 @@
 project('qsi_defect_pbc', 'cpp',
   version: '1.0.0',
   meson_version : '>= 1.5.0',
-  default_options : [ 'warning_level=3', 'buildtype=debugoptimized', 'cpp_std=c++2a' ]
+  default_options : [ 'warning_level=3', 'buildtype=debug', 'cpp_std=c++2a' ]
 )
 
 # (global) variables tracking sources and libraries
@@ -15,6 +15,8 @@ project_inc = []
 project_lib = []
 
 # add further include dirs here
+add_global_arguments('-DDEBUG', language : 'cpp')
+
 
 # build dependencies
 snf_project = subproject('smith_normal_form', default_options: [

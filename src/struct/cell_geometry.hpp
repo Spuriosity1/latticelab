@@ -55,18 +55,20 @@ struct PeriodicLattice {
 	// Const properties
 	const imat33_t cell_vectors;
 
+	typedef ipos_t idx3_t;
+
 	// Object access
 	Point* get_point_at(const ipos_t &R);
-	Point* get_point_at(const arma::ivec3& I, int sl);
+	Point* get_point_at(const idx3_t& I, int sl);
 
 	Link* get_link_at(const ipos_t &R);
-	Link* get_link_at(const arma::ivec3& I, int sl);
+	Link* get_link_at(const idx3_t& I, int sl);
 
 	Plaq* get_plaq_at(const ipos_t &R);
-	Plaq* get_plaq_at(const arma::ivec3& I, int sl);
+	Plaq* get_plaq_at(const idx3_t& I, int sl);
 
 	Vol* get_vol_at(const ipos_t &R);
-	Vol* get_vol_at(const arma::ivec3& I, int sl);
+	Vol* get_vol_at(const idx3_t& I, int sl);
 
 	// Size of the supercell
 	ipos_t size() const {return LDW.D;} 
@@ -137,7 +139,7 @@ template<
 	>
 void PeriodicLattice<Point, Link, Plaq, Vol>::populate_cells(){ 
 	// First Pass: Populate all cells
-	arma::ivec3 IDX = {0,0,0};
+	idx3_t IDX = {0,0,0};
 	this->points.resize(num_primitive()*this->primitive_spec.points.size());
 	this->links.resize(num_primitive()*this->primitive_spec.links.size());
 	this->plaqs.resize(num_primitive()*this->primitive_spec.plaqs.size());
@@ -197,7 +199,7 @@ template<
 	>
 void PeriodicLattice<Point, Link, Plaq, Vol>::connect_boundaries(){ 
 	// Second Pass: Stitch together the boundaries		
-	arma::ivec3 IDX = {0,0,0};
+	idx3_t IDX = {0,0,0};
 	for (IDX[0]=0; IDX[0]<this->size(0); IDX[0]++){
 	for (IDX[1]=1; IDX[1]<this->size(1); IDX[1]++){
 	for (IDX[2]=2; IDX[2]<this->size(2); IDX[2]++){
@@ -253,7 +255,7 @@ template<
 	std::derived_from<Cell<3>> Vol   
 	>
 Point* PeriodicLattice<Point, Link, Plaq, Vol>::get_point_at(const ipos_t &R){
-	arma::ivec3 UR = primitive_spec.UPV.L * R;
+	ipos_t UR = primitive_spec.UPV.L * R;
 	auto [quot, rem] = moddiv(UR, primitive_spec.UPV.D);
 	quot = primitive_spec.UPV.R  * quot;
 	rem =  primitive_spec.UPV.Linv * rem;

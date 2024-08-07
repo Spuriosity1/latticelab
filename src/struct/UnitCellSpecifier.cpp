@@ -11,9 +11,83 @@ std::string pprint(ipos_t x){
 	return std::format("[{} {} {}]",x[0],x[1],x[2]);
 }
 
+pointMap::pointMap(const ipos_t& L_, const size_t max_memory_):
+	L(L_),
+	max_memory(max_memory_)
+{
+	assert(L[0] > 0);
+	assert(L[1] > 0);
+	assert(L[2] > 0);
+	this->values.resize(L[0]*L[1]*L[2]);
+	for (auto& v : values){
+		v = -1;
+	}
+	if ( static_cast<size_t>(L[0]*L[1]*L[2]) > max_memory ) {
+		throw std::out_of_range("Unit cell is to large");
+	}
+}
+
+/**
+ * Attempts to insert sublattice 'value' at position 'key'.
+ * Returns 'true' if the value was overwritten
+ */
+bool pointMap::insert(ipos_t& key, sl_t value){
+	if (!inbounds(key))
+		throw std::out_of_range("key out of bounds in insert");
+	sl_t& v = values[(key[2]*L[1]+key[1])*L[0]+key[0]];
+	if (v == -1){
+		v = value;
+		return true;
+	} else {
+		// Something already there
+		return false;
+	}
+}
+
+sl_t& pointMap::operator[](const ipos_t& key){
+#ifdef DEBUG
+	if (!inbounds(key))
+		throw std::out_of_range("key out of bounds in pointMap::operator[]");
+#endif
+	return values[(key[2]*L[1]+key[1])*L[0]+key[0]];
+}
+
+sl_t pointMap::operator[](const ipos_t& key) const {
+#ifdef DEBUG
+	if (!inbounds(key))
+		throw std::out_of_range("key out of bounds in pointMap::operator[]");
+#endif
+	return values[(key[2]*L[1]+key[1])*L[0]+key[0]];
+}
+
+
+sl_t pointMap::at(const ipos_t& key) const {
+	if (!inbounds(key))
+		throw std::out_of_range("key out of bounds in pointMap::at");
+	return values[(key[2]*L[1]+key[1])*L[0]+key[0]];
+}
+
+sl_t pointMap::get_sl(const ipos_t& key){
+#ifdef DEBUG
+	if (values[(key[2]*L[1]+key[1])*L[0]+key[0]] == -1)
+		throw std::out_of_range("Sublattice is not initialised");
+#endif
+	return (*this)[key];
+}
+
+bool pointMap::inbounds(const ipos_t& x) const {
+	return (x[0] >= 0 && x[0] < L[0] && x[1] >= 0 
+			&& x[1] < L[1] && x[2] >= 0 && x[2] < L[2]);
+}
+
+
+
+
+
+
 // utility
 void UnitCellSpecifier::try_insert_position(
-		point_idx_t hmap,
+		point_idx_t& hmap,
 		ipos_t x, sl_t sl,
 		const char* obj_name){
 	bool status = hmap.insert(x,sl);

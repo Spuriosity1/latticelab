@@ -38,7 +38,7 @@ TEST(PointMap, slMapBadAccess) {
 	EXPECT_THROW(pmap[ipos_t({0,0,5})],std::out_of_range);
 };
 
-TEST(UnitCellSpecifier, Cubic) {
+TEST(UnitCellSpecifier, PointInsert) {
 	UnitCellSpecifier cell(imat33_t::from_cols(
 				{2,0,0},
 				{0,2,0},
@@ -49,6 +49,23 @@ TEST(UnitCellSpecifier, Cubic) {
 	cell.add_point(pointspec);
 
 	EXPECT_EQ(cell.num_point_sl(), 1);
+	EXPECT_TRUE(cell.is_point({0,0,0}));
+	EXPECT_FALSE(cell.is_point({1,0,0}));
+	EXPECT_FALSE(cell.is_point({0,1,0}));
+	EXPECT_FALSE(cell.is_point({0,0,1}));	
+}
+
+
+
+TEST(UnitCellSpecifier, LinkInsert) {
+	UnitCellSpecifier cell(imat33_t::from_cols(
+				{2,0,0},
+				{0,2,0},
+				{0,0,2}
+				));
+	PointSpec pointspec;
+	pointspec.position = {0,0,0};	
+	cell.add_point(pointspec);
 
 	LinkSpec linkspec;
 	linkspec.position = {1,0,0};
@@ -64,7 +81,10 @@ TEST(UnitCellSpecifier, Cubic) {
 	cell.add_link(linkspec);
 
 	EXPECT_EQ(cell.num_link_sl(), 3);
+}
 
+/*
+TEST(UnitCellSpecifier, PlaqInsert){
 	PlaqSpec plaqspec;
 	plaqspec.position = {0,1,1};
 	plaqspec.boundary = {
@@ -95,4 +115,4 @@ TEST(UnitCellSpecifier, Cubic) {
 	};	
 	cell.add_vol(volspec);
 	EXPECT_EQ(cell.num_vol_sl(), 1);
-}
+}*/

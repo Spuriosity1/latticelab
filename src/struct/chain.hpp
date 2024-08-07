@@ -2,16 +2,15 @@
 #include <map>
 #include <vector>
 
-typedef unsigned int idx_t;
 /*
 #include <armadillo>
-
 typedef arma::ivec3 ipos_t;
 typedef arma::imat33 imat33_t;
 */
 #include "vec3.hpp"
 typedef vector3::vec3<long long int> ipos_t;
 typedef vector3::mat33<long long int> imat33_t;
+typedef unsigned int idx_t;
 
 template <int order>
 struct Cell;

@@ -2,12 +2,14 @@
 
 #include <smithNormalForm.hpp>
 #include <concepts>
+#include <sstream>
 #include <stdexcept>
 #include <unordered_map>
 
 #include "chain.hpp"
 #include "matrix.hpp"
 #include "modulus.hpp"
+//#include "pointMap.hpp"
 
 namespace CellGeometry {
 
@@ -21,10 +23,10 @@ namespace CellGeometry {
 
 typedef SmithNormalFormCalculator::Matrix<arma::sword> snfmat;
 
-typedef  CellSpecifier<3> VolSpec   ;
-typedef  CellSpecifier<2> PlaqSpec  ;
-typedef  CellSpecifier<1> LinkSpec  ;
 typedef  CellSpecifier<0> PointSpec ;
+typedef  CellSpecifier<1> LinkSpec  ;
+typedef  CellSpecifier<2> PlaqSpec  ;
+typedef  CellSpecifier<3> VolSpec   ;
 
 typedef int sl_t;
 
@@ -69,45 +71,6 @@ struct ArmaSmithDecomposition {
 	const imat33_t Rinv;
 };
 
-/** A specialised "hashmap" implementation
- * exploiting the knowledge that operator[] takes in an integer vector of the 
- * form nx, ny, nz, entrywise 0 <= nx < Lx
- *
- */
-
-class pointMap {
-public:
-	pointMap(const ipos_t& L_, const size_t max_memory_=2000);
-	/**
-	 * Attempts to insert sublattice 'value' at position 'key'.
-	 * Returns 'true' if the value was overwritten
-	 */
-	bool insert(ipos_t& key, sl_t value);
-
-	// Fast / dangerous access methods (bounds check only enabled buy DEBUG)
-	sl_t& operator[](const ipos_t& key);
-	sl_t operator[](const ipos_t& key) const;
-	
-	// always does bounds check
-	sl_t at(const ipos_t& key) const;
-	// method throws if key is not defined
-	sl_t get_sl(const ipos_t& key);
-
-	const ipos_t L;
-	const size_t max_memory;
-
-
-	bool inbounds(const ipos_t& x) const;
-
-protected:
-	std::vector<sl_t> values;
-/*	TODO reindex everything if there is a common factor of 2^n
- *	to save memory
- *	auto gcd(const ipos_t& x){
-		return std::gcd(std::gcd(x[0],x[1]),x[2]);
-	}*/
-
-};
 struct UnitCellSpecifier {	
 	UnitCellSpecifier(const imat33_t& lattice_vectors_);
 	UnitCellSpecifier(const snfmat& lattice_vectors_);/**
@@ -140,7 +103,7 @@ struct UnitCellSpecifier {
 	ipos_t wrap_copy(const ipos_t& X) const { ipos_t Y(X); wrap(Y); return Y; }
 
 	// Const access methods 
-	// (with bounds checking since this shouldn't be performance critical)
+	// with bounds check (consider if needed)
 	const PointSpec& point_no(sl_t sl) const { return points.at(sl); }
 	const LinkSpec&  link_no (sl_t sl) const { return links.at(sl); }
 	const PlaqSpec&  plaq_no(sl_t sl) const { return plaqs.at(sl); }
@@ -152,40 +115,54 @@ struct UnitCellSpecifier {
 	size_t num_plaq_sl() const { return plaqs.size(); }
 	size_t num_vol_sl() const { return vols.size(); }
 
-	// Sublattice index access from a position (no bounds check)
-	sl_t get_sl_of_point(const ipos_t& R){return point_index[R];}
-	sl_t get_sl_of_link(const ipos_t& R){return link_index[R];}
-	sl_t get_sl_of_plaq(const ipos_t& R){return plaq_index[R];}
-	sl_t get_sl_of_vol(const ipos_t& R){return vol_index[R];}
+	// Sublattice index access from a physical position (real units)
+	// Linear search suboptimal here, but this fn should not be performance
+	// critical.
+	// Wraps R internally.
+	sl_t sl_of_point(const ipos_t& R);
+	sl_t sl_of_link(const ipos_t& R);
+	sl_t sl_of_plaq(const ipos_t& R);
+	sl_t sl_of_vol(const ipos_t& R);
 
-	// Checking if initialised
-	bool is_point(const ipos_t& R){return point_index.at(R) != -1;}
-	bool is_link(const ipos_t& R){return link_index.at(R) != -1;}
-	bool is_plaq(const ipos_t& R){return plaq_index.at(R) != -1;}
-	bool is_vol(const ipos_t& R){return vol_index.at(R) != -1;}
+	bool is_point(const ipos_t& R);
+	bool is_link(const ipos_t& R);
+	bool is_plaq(const ipos_t& R);
+	bool is_vol(const ipos_t& R);
 
-	protected:
+
+
+protected:
 	std::vector<PointSpec> points;
 	std::vector<LinkSpec> links;
 	std::vector<PlaqSpec> plaqs;
 	std::vector<VolSpec> vols;
 
-	//typedef std::unordered_map<ipos_t,sl_t,iposHasher,decltype(iposEqual)> point_idx_t;
-	typedef pointMap point_idx_t;
-
+	/*
+	// An index of hashmap-like things. Thought of as a function, it is
+	// index : [0,D[0]) x [0,D[1]) x [0,D[2]) -> sl_t
+	// point_index[ {D[0], 0, 0} ] or similar will throw.
+	// It is an index of U*R's.
 	point_idx_t point_index;	
 	point_idx_t link_index;	
 	point_idx_t plaq_index;	
-	point_idx_t vol_index;	
+	point_idx_t vol_index;
+	*/
+/*
+    // attempts to insert the position `x` into the pointMap hmap, throwing
+    // exceptions if `x` is outside the index scheme.
+	// @param obj_name only used to make the error message easier to read. 
+    inline void insert_position(point_idx_t& hmap, ipos_t x, sl_t sl,
+		const char* obj_name="object");
 
+    // attempts to read the value at position `x` of pointMap hmap, 
+	// no bounds check.
+	// @param obj_name only used to make the error message easier to read. 
+    sl_t sl_from_position(point_idx_t& hmap, ipos_t x);
 
-	void try_insert_position(
-			UnitCellSpecifier::point_idx_t& hmap,
-			ipos_t x, sl_t sl,
-			const char* obj_name);
-
-	
-
+	// Checks if the point 'x' in the index scheme is initialised in hmap.
+	// If x is an invalid coordinate, an exception is thrown.
+	bool is_initialised(point_idx_t& hmap,ipos_t x, const char* obj_name="object");
+*/
 };
 
 }; // end of namespace

@@ -1,5 +1,6 @@
 struct_source = [
-'UnitCellSpecifier.cpp'
+'UnitCellSpecifier.cpp',
+'preset_cellspecs.cpp'
 ]
 
 project_sources += struct_source

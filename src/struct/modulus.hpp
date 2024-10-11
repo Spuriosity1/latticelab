@@ -2,7 +2,8 @@
 #include <cstdlib>
 #include <type_traits>
 #include <concepts>
-#include <armadillo>
+#include <utility>
+#include <cassert>
 
 // like std::div with rem wrapped to [0, base)
 // Should always satisfy x = base * res.quot + rem
@@ -29,7 +30,7 @@ concept has_static_size = requires(T) {
 
 template<typename T>
 requires has_static_size<T>
-inline std::pair<T, T> moddiv(T x, T base){
+inline std::pair<T, T> moddiv(const T& x, const T& base){
 	std::pair<T, T> retval;
 	for (size_t i=0; i<x.size(); i++){
 		std::lldiv_t tmp = moddiv(x[i], base[i]);
@@ -46,21 +47,21 @@ V mod(V x, V base) {
 	assert(base > 0);
 	V res = x % base;
 	return res >= 0 ? res : res + base;
-
     //return (a % b + b) % b;
 }
 
 
-
-// Explicit functions preserving intness
-inline arma::sword det2(arma::imat33 a){
-	return a(0,0)*a(1,1) - a(0,1)*a(1,0);
+template<typename T>
+requires has_static_size<T>
+inline T mod(const T& x, const T& base){
+	T retval;
+	for (size_t i=0; i<x.size(); i++){
+		retval[i] = mod(x[i], base[i]);
+	}
+	return retval;
 }
 
-inline arma::sword det3(arma::imat33 a){
-    return (a(0,0) * (a(1,1) * a(2,2) - a(2,1) * a(1,2))
-           -a(1,0) * (a(0,1) * a(2,2) - a(2,1) * a(0,2))
-           +a(2,0) * (a(0,1) * a(1,2) - a(1,1) * a(0,2)));
-}
+
+
 
 

@@ -1,8 +1,9 @@
 #include "struct/chain.hpp"
 #include <cstdlib>
 #include <gtest/gtest.h>
-#include <stdexcept>
 #include <struct/UnitCellSpecifier.hpp>
+#include <struct/cell_geometry.hpp>
+#include <unordered_set>
 #include <vector>
 
 #ifndef DEBUG
@@ -43,6 +44,12 @@ TEST(PointMap, slMapBadAccess) {
 };
 */
 
+
+typedef PeriodicPointLattice<Cell<0>> PeriodicPointLattice_std;
+typedef PeriodicLinkLattice<Cell<0>,Cell<1>> PeriodicLinkLattice_std;
+typedef PeriodicPlaqLattice<Cell<0>,Cell<1>,Cell<2>> PeriodicPlaqLattice_std;
+typedef PeriodicVolLattice<Cell<0>,Cell<1>,Cell<2>,Cell<3>> PeriodicVolLattice_std;
+
 class CubicPointsTest : public testing::Test {
 	protected:
 		CubicPointsTest()
@@ -54,7 +61,7 @@ class CubicPointsTest : public testing::Test {
 		UnitCellSpecifier cell;
 };
 
-class CubicLinksTest : public CubicPointsTest{
+class CubicLinksTest : public CubicPointsTest {
 	protected:
 		CubicLinksTest() {
 			LinkSpec linkspec;
@@ -151,7 +158,7 @@ TEST_F(CubicVolTest, AddVolWorks) {
 	EXPECT_TRUE(cell.is_vol({1,1,1}));
 };
 
-// Pytochlore fixture
+// Pyrochlore fixture
 //
 
 class PyroPointsTest : public testing::Test {
@@ -277,4 +284,145 @@ TEST_F(PyroVolTest, AddVolWorks){
 	EXPECT_EQ(cell.num_vol_sl(), 2);
 	EXPECT_TRUE(cell.is_vol(vol_positions[0]));
 	EXPECT_TRUE(cell.is_vol(vol_positions[1]));
+}
+
+
+// specifier is probably OK, move on
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/////// POINT LATTICE   ////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+TEST_F(PyroPointsTest, ConstructAbstractPrimitive){
+	PeriodicAbstractLattice lat(cell, 
+			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
+			);
+	EXPECT_EQ(lat.num_primitive, 1);
+	std::vector<ipos_t> R = {
+		{0,0,0},{1,1,1},{2,2,2},{-1,0,0},{-1,-1,2},
+		{4,5,6},{-4,1,3}
+	};
+	for (auto& r : R){
+		EXPECT_EQ(lat.get_supercell_IDX(r), idx3_t({0,0,0}));
+	}
+}
+
+
+TEST_F(PyroPointsTest, ConstructAbstractPyro){
+	PeriodicAbstractLattice lat(cell, 
+			imat33_t::from_cols({-1,1,1},{1,-1,1},{1,1,-1})
+			);
+	EXPECT_EQ(lat.num_primitive, 4);
+}
+
+TEST_F(PyroPointsTest, ConstructPointPrim){
+	PeriodicPointLattice_std lat(cell, 
+			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
+			);
+	std::unordered_set<ipos_t> positions;
+	for (size_t j =0; j < lat.points.size(); j++ ) {
+		auto& R = lat.points[j].position;
+		positions.insert(R);
+		EXPECT_EQ(&lat.get_point_at(R), &lat.points[j]);
+		EXPECT_EQ(&lat.get_point_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
+				&lat.points[j]);
+	}
+	ASSERT_EQ(positions.size(), lat.points.size());
+}
+
+
+TEST_F(PyroPointsTest, ConstructPointCube){
+	PeriodicPointLattice_std lat(cell, 
+			imat33_t::from_cols({-1,1,1},{1,-1,1},{1,1,-1})
+			);
+	std::unordered_set<ipos_t> positions;
+	for (size_t j =0; j < lat.points.size(); j++ ) {
+		auto& R = lat.points[j].position;
+		positions.insert(R);
+		EXPECT_EQ(&lat.get_point_at(R), &lat.points[j]);
+		EXPECT_EQ(&lat.get_point_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
+				&lat.points[j]);
+	}
+	ASSERT_EQ(positions.size(), lat.points.size());
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/////// Link LATTICE   ////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///
+///
+
+
+TEST_F(PyroLinksTest, ConstructLinkPrim){
+	PeriodicLinkLattice_std lat(cell, 
+			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
+			);
+	std::unordered_set<ipos_t> positions;
+	for (size_t j =0; j < lat.links.size(); j++ ) {
+		auto& R = lat.links[j].position;
+		positions.insert(R);
+		EXPECT_EQ(&lat.get_link_at(R), &lat.links[j]);
+		EXPECT_EQ(&lat.get_link_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
+				&lat.links[j]);
+	}
+	ASSERT_EQ(positions.size(), lat.links.size());
+}
+
+
+TEST_F(PyroLinksTest, ConstructLinkCube){
+	PeriodicLinkLattice_std lat(cell, 
+			imat33_t::from_cols({-1,1,1},{1,-1,1},{1,1,-1})
+			);
+	std::unordered_set<ipos_t> positions;
+	for (size_t j =0; j < lat.links.size(); j++ ) {
+		auto& R = lat.links[j].position;
+		positions.insert(R);
+		EXPECT_EQ(&lat.get_link_at(R), &lat.links[j]);
+		EXPECT_EQ(&lat.get_link_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
+				&lat.links[j]);
+	}
+	ASSERT_EQ(positions.size(), lat.links.size());
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/////// Plaq LATTICE   ////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+/// These check that the lattice indexor finctions behave as expected
+
+
+TEST_F(PyroPlaqsTest, ConstructPlaqPrim){
+	PeriodicPlaqLattice_std lat(cell, 
+			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
+			);
+	std::unordered_set<ipos_t> positions;
+	for (size_t j =0; j < lat.plaqs.size(); j++ ) {
+		auto& R = lat.plaqs[j].position;
+		positions.insert(R);
+		EXPECT_EQ(&lat.get_plaq_at(R), &lat.plaqs[j]);
+		EXPECT_EQ(&lat.get_plaq_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
+				&lat.plaqs[j]);
+	}
+	ASSERT_EQ(positions.size(), lat.plaqs.size());
+}
+
+
+TEST_F(PyroPlaqsTest, ConstructPlaqCube){
+	PeriodicPlaqLattice_std lat(cell, 
+			imat33_t::from_cols({-1,1,1},{1,-1,1},{1,1,-1})
+			);
+	std::unordered_set<ipos_t> positions;
+	for (size_t j =0; j < lat.plaqs.size(); j++ ) {
+		auto& R = lat.plaqs[j].position;
+		positions.insert(R);
+		EXPECT_EQ(&lat.get_plaq_at(R), &lat.plaqs[j]);
+		EXPECT_EQ(&lat.get_plaq_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
+				&lat.plaqs[j]);
+	}
+	ASSERT_EQ(positions.size(), lat.plaqs.size());
 }

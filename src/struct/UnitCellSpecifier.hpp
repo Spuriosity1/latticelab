@@ -1,15 +1,9 @@
 #pragma once
 
-#include <smithNormalForm.hpp>
-#include <concepts>
-#include <sstream>
-#include <stdexcept>
-#include <unordered_map>
 
 #include "chain.hpp"
 #include "matrix.hpp"
-#include "modulus.hpp"
-//#include "pointMap.hpp"
+#include "smithNormalForm.hpp"
 
 namespace CellGeometry {
 
@@ -21,7 +15,7 @@ namespace CellGeometry {
 /////////////////////////////////////////////
 
 
-typedef SmithNormalFormCalculator::Matrix<arma::sword> snfmat;
+typedef SmithNormalFormCalculator::Matrix<long long int> snfmat;
 
 typedef  CellSpecifier<0> PointSpec ;
 typedef  CellSpecifier<1> LinkSpec  ;
@@ -35,6 +29,9 @@ typedef int sl_t;
 ///  FORWARD DECLARATIONS
 /////////////////////////////////////////////
 /////////////////////////////////////////////
+///
+
+// type converters
 template<typename T>
 inline vector3::mat33<T> from_snfmat(SmithNormalFormCalculator::Matrix<T> m){
 	vector3::mat33<T> out;
@@ -54,9 +51,9 @@ inline SmithNormalFormCalculator::Matrix<T> to_snfmat(vector3::mat33<T>m){
 }
 
 // TODO move to the subproject
-struct ArmaSmithDecomposition {
-	ArmaSmithDecomposition(
-			SmithNormalFormCalculator::SmithNormalFormDecomposition<arma::sword>decomp ) : 
+struct SNF_decomp {
+	SNF_decomp(
+			SmithNormalFormCalculator::SmithNormalFormDecomposition<long long int>decomp ) : 
 		L(from_snfmat(decomp.L)),
 		Linv(from_snfmat(SmithNormalFormCalculator::inverse(decomp.L))),
 		D(from_snfmat(decomp.D).diagonal()),
@@ -88,7 +85,7 @@ struct UnitCellSpecifier {
 	// [ a1  a2  a3]
 	const imat33_t lattice_vectors;
 	// Smith decomposition of lattice_vectors
-	const ArmaSmithDecomposition UPV;
+	const SNF_decomp UPV;
 
 	// Creation methods
 	// Use these over manipulating the arrays directly
@@ -116,13 +113,12 @@ struct UnitCellSpecifier {
 	size_t num_vol_sl() const { return vols.size(); }
 
 	// Sublattice index access from a physical position (real units)
-	// Linear search suboptimal here, but this fn should not be performance
-	// critical.
-	// Wraps R internally.
-	sl_t sl_of_point(const ipos_t& R);
-	sl_t sl_of_link(const ipos_t& R);
-	sl_t sl_of_plaq(const ipos_t& R);
-	sl_t sl_of_vol(const ipos_t& R);
+	// Linear search suboptimal here -- optimisation pointless, 
+	// pointers to everything already stored.
+	sl_t sl_of_point(const ipos_t& R) const;
+	sl_t sl_of_link(const ipos_t& R) const;
+	sl_t sl_of_plaq(const ipos_t& R) const;
+	sl_t sl_of_vol(const ipos_t& R) const;
 
 	bool is_point(const ipos_t& R);
 	bool is_link(const ipos_t& R);

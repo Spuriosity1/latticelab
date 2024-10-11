@@ -1,15 +1,13 @@
 #include "UnitCellSpecifier.hpp"
 #include "chain.hpp"
+#include "modulus.hpp"
 #include <sstream>
 #include <stdexcept>
-#include <string>
-#include <format>
 
 namespace CellGeometry {
 
-std::string pprint(ipos_t x){
-	return std::format("[{} {} {}]",x[0],x[1],x[2]);
-}
+#define PPRINT(x) "["<<x[0]<<" "<<x[1]<<" "<<x[2]<<"]"
+
 /*
 void UnitCellSpecifier::insert_position(
 		point_idx_t& hmap,
@@ -44,25 +42,25 @@ bool UnitCellSpecifier::is_initialised(point_idx_t& hmap,ipos_t x,
 // Sublattice index access from a physical position (real units)
 // Linear search suboptimal here, but this fn should not be performance
 // critical.
-sl_t UnitCellSpecifier::sl_of_point(const ipos_t& R_){
+sl_t UnitCellSpecifier::sl_of_point(const ipos_t& R_) const {
 	auto R = wrap_copy(R_);
 	for (size_t i=0; i<points.size(); i++) { if (points[i].position == R) return i; }
 	std::stringstream s("No point found at "); s << R;
 	throw std::out_of_range(s.str()); 
 }
-sl_t UnitCellSpecifier::sl_of_link(const ipos_t& R_){
+sl_t UnitCellSpecifier::sl_of_link(const ipos_t& R_) const {
 	auto R = wrap_copy(R_);
 	for (size_t i=0; i<links.size(); i++) { if (links[i].position == R) return i; }
 	std::stringstream s("No link found at "); s << R;
 	throw std::out_of_range(s.str()); 
 }
-sl_t UnitCellSpecifier::sl_of_plaq(const ipos_t& R_){
+sl_t UnitCellSpecifier::sl_of_plaq(const ipos_t& R_) const {
 	auto R = wrap_copy(R_);
 	for (size_t i=0; i<plaqs.size(); i++) { if (plaqs[i].position == R) return i; }
 	std::stringstream s("No plaq found at "); s << R;
 	throw std::out_of_range(s.str()); 
 }
-sl_t UnitCellSpecifier::sl_of_vol(const ipos_t& R_){
+sl_t UnitCellSpecifier::sl_of_vol(const ipos_t& R_) const {
 	auto R = wrap_copy(R_);
 	for (size_t i=0; i<vols.size(); i++) { if (vols[i].position == R) return i; }
 	std::stringstream s("No vol found at "); s << R;
@@ -95,7 +93,7 @@ template<int _order>
 void throw_bad_boundary(CellSpecifier<_order> p, ipos_t missing_point) {
 	std::stringstream s;
 	s << "Problem with boundary of "<<_order<<"-cell specifier ";
-	s << "at "<<pprint(p.position)<<": ";
+	s << "at "<<PPRINT(p.position)<<": ";
 	s << "There is no "<<_order-1<<"-cell at " << missing_point;
 	throw std::out_of_range(s.str());
 }
@@ -120,6 +118,10 @@ UnitCellSpecifier::UnitCellSpecifier(
 	UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
 	// point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {
+	if (abs(det(cellspec)) != 1) {
+		throw std::invalid_argument(
+				"cellspec of re-parameterised unit cell must have determinant 1");
+	}
 	// populate the cells
 	for (const auto& p : other.points){	add_point(p); }
 	for (const auto& p : other.links){	add_link(p); }

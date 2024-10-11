@@ -206,6 +206,7 @@ protected:
 };
 
 
+
 /// CONVENIENT TYPEDEFS
 typedef vec3<int> vec3i;
 typedef vec3<double> vec3d;
@@ -216,5 +217,37 @@ std::ostream& operator<<(std::ostream& os, vec3<T> v){
 	return os;
 }
 
+
+
+// Explicit functions preserving intness
+template<typename V>
+requires std::signed_integral<V>
+inline V det(mat33<V> a){
+    return (a(0,0) * (a(1,1) * a(2,2) - a(2,1) * a(1,2))
+           -a(1,0) * (a(0,1) * a(2,2) - a(2,1) * a(0,2))
+           +a(2,0) * (a(0,1) * a(1,2) - a(1,1) * a(0,2)));
+}
+
 };
+
+
+// HASHABILITY
+//
+template <typename T>
+struct std::hash<vector3::vec3<T>>
+{
+  std::size_t operator()(const vector3::vec3<T>& k) const
+  {
+    using std::size_t;
+    using std::hash;
+
+    // Compute individual hash values for first,
+    // second and third and combine them using XOR
+    // and bit shifting:
+
+    return hash<T>()(k[0]) ^ (hash<T>()(k[1]) << 1) ^ (hash<T>()(k[2]) << 2);
+  }
+};
+
+
 #endif // !VEC3_CUSTOM_HPP

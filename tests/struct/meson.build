@@ -10,6 +10,14 @@ cellspectest = executable('cellspectest', ['cellspectest.cc', test_main],
   cpp_args : ['-DDEBUG']
   )
 
+
+cellbuildtest = executable('cellbuildtest', ['cellbuildtest.cc', test_main],
+  include_directories: project_inc,
+  dependencies: [structtest_deps, test_deps],
+  link_with: [structtest_deps_libs, test_dep_libs],
+  cpp_args : ['-DDEBUG']
+  )
+
 modulotest = executable('modulotest', ['modtest.cc', test_main],
   include_directories: project_inc,
   dependencies: [structtest_deps, test_deps],

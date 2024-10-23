@@ -43,7 +43,7 @@ add_project_arguments(cpp_proj_arguments, language : 'cpp')
 
 
 global_deps = [
-  dependency('Armadillo', required: true),
+  #dependency('Armadillo', required: true),
   #  dependency('argparse', required: true),
   #  dependency('HDF5', required: true),
   dependency('nlohmann_json', required: true),

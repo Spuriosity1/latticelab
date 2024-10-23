@@ -1,3 +1,5 @@
 build/**
 .cache
 .rgignore
+subprojects/googletest-1.15.0
+subprojects/packagecache

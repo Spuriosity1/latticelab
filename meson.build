@@ -1,8 +1,11 @@
-project('lattice_lib', 'cpp',
+project('lattice_lib', ['cpp', 'c'],
   version: '1.0.0',
   meson_version : '>= 1.5.0',
   default_options : [ 'warning_level=3', 'buildtype=debug', 'cpp_std=c++2a' ]
 )
+
+
+cmake = import('cmake')
 
 # (global) variables tracking sources and libraries
 library_path = []
@@ -25,6 +28,12 @@ snf_project = subproject('smith_normal_form', default_options: [
 snf_dep = snf_project.get_variable('snf_dep')
 
 
+# Configure the CMake project
+sub_proj = cmake.subproject('HighFive')
+
+# Fetch the dependency object
+highfive_dep = sub_proj.dependency('HighFive')
+
 
 
 
@@ -36,7 +45,10 @@ add_project_arguments(cpp_proj_arguments, language : 'cpp')
 global_deps = [
   dependency('Armadillo', required: true),
   #  dependency('argparse', required: true),
-  snf_dep
+  #  dependency('HDF5', required: true),
+  dependency('nlohmann_json', required: true),
+  snf_dep,
+  highfive_dep
   ]
 
 # builds libraries
@@ -53,7 +65,9 @@ endif
 # builds the main executable
 # main_bin = executable('generate_spinon_basis', gen_spinon_basis_source,include_directories: project_inc,  dependencies: global_deps,   link_with: project_lib)
 
-main_bin = executable('generate_spinon_basis', gen_spinon_basis_source,include_directories: project_inc,  dependencies: global_deps,   link_with: project_lib)
+largeS_MC_sources=['src/largeS-QSI.cpp']
+main_bin = executable('largeS_MC', largeS_MC_sources, include_directories: project_inc,  dependencies: global_deps,   link_with: project_lib)
+
 
 #
 ## This adds the clang format file to the build directory

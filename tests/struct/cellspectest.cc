@@ -44,6 +44,7 @@ TEST(PointMap, slMapBadAccess) {
 };
 */
 
+using namespace rational;
 
 typedef PeriodicPointLattice<Cell<0>> PeriodicPointLattice_std;
 typedef PeriodicLinkLattice<Cell<0>,Cell<1>> PeriodicLinkLattice_std;
@@ -53,7 +54,7 @@ typedef PeriodicVolLattice<Cell<0>,Cell<1>,Cell<2>,Cell<3>> PeriodicVolLattice_s
 class CubicPointsTest : public testing::Test {
 	protected:
 		CubicPointsTest()
-			: cell(imat33_t::from_cols({2, 0, 0}, {0, 2, 0}, {0, 0, 2})) {
+			: cell(rmat33::from_cols({2, 0, 0}, {0, 2, 0}, {0, 0, 2})) {
 				PointSpec pointspec;
 				pointspec.position = {0, 0, 0};
 				cell.add_point(pointspec);
@@ -164,7 +165,7 @@ TEST_F(CubicVolTest, AddVolWorks) {
 class PyroPointsTest : public testing::Test {
 	protected:
 		PyroPointsTest()
-			: cell(imat33_t::from_cols({0,4,4},	{4,0,4},{4,4,0})) {			
+			: cell(rmat33::from_cols({0,4,4},	{4,0,4},{4,4,0})) {			
 				PointSpec pointspec;
 				for (const auto& x : point_positions){
 					pointspec.position = x;
@@ -315,6 +316,7 @@ TEST_F(PyroPointsTest, ConstructAbstractPyro){
 	EXPECT_EQ(lat.num_primitive, 4);
 }
 
+
 TEST_F(PyroPointsTest, ConstructPointPrim){
 	PeriodicPointLattice_std lat(cell, 
 			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
@@ -329,7 +331,6 @@ TEST_F(PyroPointsTest, ConstructPointPrim){
 	}
 	ASSERT_EQ(positions.size(), lat.points.size());
 }
-
 
 TEST_F(PyroPointsTest, ConstructPointCube){
 	PeriodicPointLattice_std lat(cell, 
@@ -346,6 +347,17 @@ TEST_F(PyroPointsTest, ConstructPointCube){
 	ASSERT_EQ(positions.size(), lat.points.size());
 }
 
+TEST_F(PyroPointsTest, PointUniqueness){
+	PeriodicPointLattice_std lat(cell, 
+			imat33_t::from_cols({-1,2,3},{1,-4,5},{3,2,-1})
+			);
+	std::set<Cell<0>*> unique_points;
+	for (size_t j =0; j < lat.points.size(); j++ ) {
+		auto res = unique_points.insert(&lat.points[j]);
+		EXPECT_TRUE(res.second);
+	}
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -354,7 +366,10 @@ TEST_F(PyroPointsTest, ConstructPointCube){
 ///////////////////////////////////////////////////////////////////////////////
 ///
 ///
+//TEST_F(PyroLinksTest, WrapFunctionWorks){
+	
 
+//}
 
 TEST_F(PyroLinksTest, ConstructLinkPrim){
 	PeriodicLinkLattice_std lat(cell, 
@@ -385,6 +400,21 @@ TEST_F(PyroLinksTest, ConstructLinkCube){
 				&lat.links[j]);
 	}
 	ASSERT_EQ(positions.size(), lat.links.size());
+}
+
+
+TEST_F(PyroLinksTest, LinkUniqueness){
+	PeriodicLinkLattice_std lat(cell, 
+			imat33_t::from_cols({-1,2,3},{1,-4,5},{3,2,-1})
+			);
+	std::set<Cell<1>*> unique_links;
+
+	for (size_t j =0; j < lat.links.size(); j++ ) {
+		auto res = unique_links.insert(&lat.links[j]);
+		EXPECT_TRUE(res.second);
+		lat.get_link_at(lat.links[j].position);
+	}
+	ASSERT_EQ(lat.links.size(), unique_links.size());
 }
 
 

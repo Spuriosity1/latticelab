@@ -4,6 +4,7 @@
 #include "chain.hpp"
 #include "matrix.hpp"
 #include "smithNormalForm.hpp"
+#include "rationalmath.hpp"
 
 namespace CellGeometry {
 
@@ -63,14 +64,14 @@ struct SNF_decomp {
 
 	const imat33_t L;
 	const imat33_t Linv;
-	const ipos_t D;
+	const ivec3_t D;
 	const imat33_t R;
 	const imat33_t Rinv;
 };
 
 struct UnitCellSpecifier {	
-	UnitCellSpecifier(const imat33_t& lattice_vectors_);
-	UnitCellSpecifier(const snfmat& lattice_vectors_);/**
+	UnitCellSpecifier(const rational::rmat33& lattice_vectors_);
+	/**
 	 * Creates a new unitcell from the points of the old one, with
 	 * new primitive_vectors such that
 	 * `this->primitive_vectors = other.primitive_vectors * cellspec`
@@ -83,9 +84,9 @@ struct UnitCellSpecifier {
 
 	// The lattice vectors (columns are interpreted as vectors)
 	// [ a1  a2  a3]
-	const imat33_t lattice_vectors;
+	const rational::rmat33 lattice_vectors;
 	// Smith decomposition of lattice_vectors
-	const SNF_decomp UPV;
+	//const SNF_decomp UPV;
 
 	// Creation methods
 	// Use these over manipulating the arrays directly
@@ -94,7 +95,8 @@ struct UnitCellSpecifier {
 	void add_plaq(const PlaqSpec& p);
 	void add_vol(const VolSpec& v);
 
-	// Wraps the vector X in-place to within this unit cell.
+	// Wraps the vector X in-place to within this unit cell, i.e. such that
+	// lattice_vectors_inverse * X in [0,1)^3
 	void wrap(ipos_t& X) const;
 	void wrap(GeometricObject& X) const;
 	ipos_t wrap_copy(const ipos_t& X) const { ipos_t Y(X); wrap(Y); return Y; }
@@ -132,6 +134,22 @@ protected:
 	std::vector<LinkSpec> links;
 	std::vector<PlaqSpec> plaqs;
 	std::vector<VolSpec> vols;
+
+	// = inv(lattice_vectors)
+	const rational::rmat33 lattice_vectors_inverse; 
+
+	bool is_valid_position(const ipos_t& R){
+		return (R[0].denom != 0) && (R[1].denom != 0) && (R[2].denom != 0);
+	}
+
+	void assert_valid_position(const ipos_t& R){
+#ifndef NDEBUG
+		if ( !is_valid_position(R) ) {
+			throw std::invalid_argument("spec has invalid location");
+		}
+#endif
+	}
+
 
 	/*
 	// An index of hashmap-like things. Thought of as a function, it is

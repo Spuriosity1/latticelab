@@ -11,14 +11,13 @@ cellspectest = executable('cellspectest', ['cellspectest.cc', test_main],
   )
 
 
-cellbuildtest = executable('cellbuildtest', ['cellbuildtest.cc', test_main],
+modulotest = executable('modulotest', ['modtest.cc', test_main],
   include_directories: project_inc,
   dependencies: [structtest_deps, test_deps],
-  link_with: [structtest_deps_libs, test_dep_libs],
-  cpp_args : ['-DDEBUG']
+  link_with: [structtest_deps_libs, test_dep_libs]
   )
 
-modulotest = executable('modulotest', ['modtest.cc', test_main],
+rationaltest = executable('rationaltest', ['rationaltest.cpp', test_main],
   include_directories: project_inc,
   dependencies: [structtest_deps, test_deps],
   link_with: [structtest_deps_libs, test_dep_libs]
@@ -26,6 +25,7 @@ modulotest = executable('modulotest', ['modtest.cc', test_main],
 
 test('modulotest', modulotest)
 test('cellspectest', cellspectest)
+test('rationaltest', rationaltest)
 
 all_test_deps += structtest_deps
 all_test_dep_libs += structtest_deps_libs

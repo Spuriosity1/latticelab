@@ -1,13 +1,14 @@
 #pragma once
 
 #include "UnitCellSpecifier.hpp"
+#include "rationalmath.hpp"
 
 namespace CellGeometry {
 namespace PrimitiveSpecifers {
 
 struct Pyrochlore : public UnitCellSpecifier {
 	Pyrochlore() : UnitCellSpecifier(
-		imat33_t::from_cols({0, 4, 4}, {4, 0, 4}, {4, 4, 0}) )
+		rational::rmat33::from_cols({0, 4, 4}, {4, 0, 4}, {4, 4, 0}) )
 	{
 		setup_points();
 		setup_links();
@@ -22,10 +23,10 @@ private:
 };
 
 
-/*
+
 struct Cubic : public UnitCellSpecifier {
 	Cubic() : UnitCellSpecifier(
-		imat33_t::from_cols({2,0,0},{0,2,0},{0,0,2}) )
+		rational::rmat33::from_cols({2,0,0},{0,2,0},{0,0,2}) )
 	{
 		setup_points();
 		setup_links();
@@ -38,7 +39,7 @@ private:
 	void setup_plaqs();
 	void setup_vols();
 };
-*/
+
 
 };
 };

@@ -19,7 +19,7 @@ using namespace CellGeometry;
 struct Tetra;
 struct PyroSite;
 
-struct Tetra : public Cell<0, NullCell<-1>, PyroSite> {
+struct Tetra : public Cell<0> {
     double Q;
 };
 
@@ -54,9 +54,9 @@ int main (int argc, const char *argv[]) {
     std::filesystem::path outpath;
 
     basic_parser::Parser args(1,1);
-    args.declare("L1",&L1_s);
-    args.declare("L2",&L2_s);
-    args.declare("L3",&L3_s);
+    args.declare("A1",&L1_s);
+    args.declare("A2",&L2_s);
+    args.declare("A3",&L3_s);
 
     args.from_file(argv[1]);
     outpath = argv[2];

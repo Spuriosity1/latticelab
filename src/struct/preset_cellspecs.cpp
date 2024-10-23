@@ -85,8 +85,58 @@ namespace PrimitiveSpecifers {
 	}
 
 
+	void Cubic::setup_points(){
+		PointSpec pointspec;
+		pointspec.position = {0, 0, 0};
+		this->add_point(pointspec);
+	}
 
+	void Cubic::setup_links(){
+		LinkSpec linkspec;
+		linkspec.position = {1,0,0};
+		linkspec.boundary = { {1, {-1,0,0}}, {-1, {1,0,0}} };
+		this->add_link(linkspec);
 
+		linkspec.position = {0,1,0};
+		linkspec.boundary = { {1, {0,-1,0}}, {-1, {0,1,0}} };
+		this->add_link(linkspec);
+
+		linkspec.position = {0,0,1};
+		linkspec.boundary = { {1, {0,0,-1}}, {-1, {0,0,1}} };
+		this->add_link(linkspec);
+	}
+
+	void Cubic::setup_plaqs(){
+		PlaqSpec plaqspec;
+		plaqspec.position = {0,1,1};
+		plaqspec.boundary = {
+			{1, {0,0,-1}}, {1, {0,1,0}}, {-1, {0,0,-1}}, {-1, {0,-1,0}}
+		};
+		this->add_plaq(plaqspec);
+
+		plaqspec.position = {1,0,1};
+		plaqspec.boundary = {
+			{1, {-1,0,0}}, {1, {0,0,1}}, {-1, {-1,0,0}}, {-1, {0,0,-1}}
+		};
+		this->add_plaq(plaqspec);
+
+		plaqspec.position = {1,1,0};
+		plaqspec.boundary = {
+			{1, {0,-1,0}}, {1, {1,0,0}}, {-1, {0,-1,0}}, {-1, {-1,0,0}}
+		};
+		this->add_plaq(plaqspec);
+	}
+
+	void Cubic::setup_vols(){
+		VolSpec volspec;
+		volspec.position = {1,1,1};
+		volspec.boundary = {
+			{1, {1,0,0}}, {-1, {-1,0,0}},
+			{1, {0,1,0}}, {-1, {0,-1,0}},
+			{1, {0,0,1}}, {-1, {0,0,-1}}
+		};	
+		this->add_vol(volspec);
+	}
 
 };
 };

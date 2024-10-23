@@ -1,15 +1,13 @@
 #pragma once 
 
-#include <array>
 #include <cstddef>
 #include <vector>
 #include <cstdlib>
 #include <smithNormalForm.hpp>
 #include <cassert>
 
-
 #include "chain.hpp"
-#include "modulus.hpp"
+#include "struct/rationalmath.hpp"
 #include "vec3.hpp"
 #include "UnitCellSpecifier.hpp"
 
@@ -26,7 +24,7 @@ namespace CellGeometry {
 /////////////////////////////////////////////
 
 
-typedef ipos_t idx3_t;
+typedef ivec3_t idx3_t;
 
 
 // Does the main part of the 3d indexing work
@@ -35,38 +33,49 @@ struct PeriodicAbstractLattice {
 			const UnitCellSpecifier& specified_primitive,
 			const imat33_t& supercell
 			) : 
-	// Store the supercell's lattice vectors here by calling the base class constructor
-	cell_vectors(specified_primitive.lattice_vectors * supercell),
 	// Smith decopose the supercell spec to find a primitive cell that aligns nicely with the supercell
 	LDW(ComputeSmithNormalForm( to_snfmat(supercell))),
+	// Store the reparameterised supercell
+	cell_vectors(specified_primitive.lattice_vectors * rational::rmat33::from_other(supercell)),
+	// Cell vectors only used for indexing
+	index_cell_vectors(specified_primitive.lattice_vectors * rational::rmat33::from_other(supercell * LDW.R)),
 	// Store the new primitve cell
 	primitive_spec( specified_primitive,  LDW.Linv ),
 	num_primitive(LDW.D[0]*LDW.D[1]*LDW.D[2])
-	{}
-
-	// 3-vectors, arranged columnwise, corresponding to supercell lengths 
-	const imat33_t cell_vectors;
+	{
+	}
 
 	// Size of the supercell in units of primitive cells
-	inline ipos_t size() const {return LDW.D;} 
+	inline ivec3_t size() const {return LDW.D;} 
 	inline int size(int idx) const {
 		assert(idx >= 0 && idx < 3);
 		return LDW.D[idx];
 	}
 
+	// Converts a position R of a supercell point into a three-tuple lying in
+	// [0, D[0]) x [0, D[1]) x [0, D[2]) \subset Z^3
+	// Modifies its argument, leaving remainder there
 	idx3_t get_supercell_IDX(ipos_t&R);
 
+
 	///////////////////////////////////////////////////////
-protected:
-	// The Smith decompositions of the basis vectors, for indexing purposes
+// protected:
+	// The Smith decompositions of the supercell spec Z, for indexing purposes
 	const SNF_decomp LDW;
-	// The primitive cell used after SNF decomposition
-	const UnitCellSpecifier primitive_spec;
-	//	const ArmaSmithDecomposition UPV;
 	inline size_t idx_from_idx3(const idx3_t&I){
 		return (I[2]*LDW.D[1] + I[1])*LDW.D[0] + I[0];
 	}
 public:
+	// 3-vectors, arranged columnwise, corresponding to supercell lengths 
+	// i.e. j'th vector is cell_vectors[:, j]
+	// a0 b0 c0
+	// a1 b1 c1
+	// a2 b2 c2
+	const rational::rmat33 cell_vectors; // = specified primitive * supercell
+	const rational::rmat33 index_cell_vectors;
+
+	// The primitive cell used after SNF decomposition
+	const UnitCellSpecifier primitive_spec;
 	const int num_primitive;
 };
 
@@ -87,20 +96,33 @@ public:
  *
  * R = b * (I + D W^-1 N) + r
  */
-inline idx3_t PeriodicAbstractLattice::get_supercell_IDX(ipos_t& R)
-{	
-	ipos_t UR = primitive_spec.UPV.L * R;
-	auto [quot, rem] = moddiv(UR, primitive_spec.UPV.D);
-	quot = primitive_spec.UPV.R  * quot;
-	R =  primitive_spec.UPV.Linv * rem;
-	// quot = V * ( UR // diag[P] ) 
-	// R  = Uinv * mod( UR, diag[P] )
-	// the sl position
-	
-	// wrap quot around supercell to  yield the index
-	return mod(quot, LDW.D);
-}
+//inline idx3_t PeriodicAbstractLattice::get_supercell_IDX(ipos_t& R)
+//{	
+//	ipos_t UR = primitive_spec.UPV.L * R;
+//	auto [quot, rem] = moddiv(UR, primitive_spec.UPV.D);
+//	quot = primitive_spec.UPV.R  * quot;
+//	R =  primitive_spec.UPV.Linv * rem;
+//	// quot = V * ( UR // diag[P] ) 
+//	// R  = Uinv * mod( UR, diag[P] )
+//	// the sl position
+//	
+//	// wrap quot around supercell to  yield the index
+//	return mod(quot, LDW.D);
+//}
 
+
+
+/*
+ * Wraps r to primitive cell, and returns the primitive-cell index
+ *
+ * Given a 3D unit cell, seek an index I in [0,D_0) x [0, D_1) x [0, D_2)
+ * such that R = b * I + A N + r
+ * for arb. N in Z3
+*/
+inline idx3_t PeriodicAbstractLattice::get_supercell_IDX(ipos_t& R) {
+	throw "NOtImplemented";
+
+}
 
 /* for reference:
  *  specified_unitcell:
@@ -122,7 +144,6 @@ inline idx3_t PeriodicAbstractLattice::get_supercell_IDX(ipos_t& R)
 template<
 	CellLike<0> Point 
 	>
-	requires (Point::order == 0)
 struct PeriodicPointLattice : public PeriodicAbstractLattice {
 	PeriodicPointLattice(
 			const UnitCellSpecifier& specified_primitive,
@@ -187,7 +208,7 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
 		PeriodicPointLattice<Point>(primitive, supercell)
 	{
 		initialise_links();
-		connect_boundaries();
+		connect_link_boundaries();
 	}
 
 	// Object access
@@ -214,7 +235,7 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
 		idx3_t IDX = {0,0,0};
 		// ensure all have the right number of spaces
 		this->links.resize(this->num_primitive*this->primitive_spec.num_link_sl());
-	
+		// Place all of the links	
 		for (IDX[0]=0; IDX[0]<this->size(0); IDX[0]++){
 		for (IDX[1]=0; IDX[1]<this->size(1); IDX[1]++){
 		for (IDX[2]=0; IDX[2]<this->size(2); IDX[2]++){
@@ -227,16 +248,16 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
 		}}}
 	}
 	
-	void connect_boundaries(){ 
+	void connect_link_boundaries(){ 
 		// Stitch together the boundaries and coboundaries
 		for (Link& l : links){
 			// Iterate over link sublattices
 			sl_t sl = this->primitive_spec.sl_of_link(l.position);
 			const auto& linkspec = this->primitive_spec.link_no(sl); // link reference
 			for (auto& bp : linkspec.boundary) {
-				auto point = this->get_point_at(linkspec.position + bp.relative_position);
-				l.boundary[&point] = bp.multiplier;
-				point.coboundary[&l] = bp.multiplier;
+				Point& point = this->get_point_at(l.position + bp.relative_position);
+				l.boundary[std::addressof(point)] = bp.multiplier;
+				point.coboundary[std::addressof(l)] = bp.multiplier;
 			}
 		}
 	}
@@ -263,7 +284,7 @@ struct PeriodicPlaqLattice : public PeriodicLinkLattice<Point,Link>
 		PeriodicLinkLattice<Point,Link>(primitive, supercell)
 	{
 		initialise_plaqs();
-		connect_boundaries();
+		connect_plaq_boundaries();
 	}
 
 	// Object access
@@ -306,16 +327,16 @@ struct PeriodicPlaqLattice : public PeriodicLinkLattice<Point,Link>
 		}}}
 	}
 	
-	void connect_boundaries(){ 
+	void connect_plaq_boundaries(){ 
 		// Stitch together the boundaries and coboundaries
-		for (Plaq& l : plaqs){
+		for (Plaq& pl : plaqs){
 			// Iterate over plaq sublattices
-			int sl = this->primitive_spec.sl_of_plaq(l.position);
+			int sl = this->primitive_spec.sl_of_plaq(pl.position);
 			const auto& plaqspec = this->primitive_spec.plaq_no(sl); // plaq reference
 			for (auto& bp : plaqspec.boundary) {
-				auto link = this->get_link_at(plaqspec.position + bp.relative_position);
-				l.boundary[&link] = bp.multiplier;
-				link.coboundary[&l] = bp.multiplier;
+				auto link = this->get_link_at(pl.position + bp.relative_position);
+				pl.boundary[&link] = bp.multiplier;
+				link.coboundary[&pl] = bp.multiplier;
 			}
 		}
 	}
@@ -341,7 +362,7 @@ struct PeriodicVolLattice : public PeriodicPlaqLattice<Point,Link,Plaq>
 		PeriodicPlaqLattice<Point,Link,Plaq>(primitive, supercell)
 	{
 		initialise_vols();
-		connect_boundaries();
+		connect_vol_boundaries();
 	}
 
 	// Object access
@@ -384,16 +405,16 @@ struct PeriodicVolLattice : public PeriodicPlaqLattice<Point,Link,Plaq>
 		}}}
 	}
 	
-	void connect_boundaries(){ 
+	void connect_vol_boundaries(){ 
 		// Stitch together the boundaries and coboundaries
-		for (Vol& l : vols){
+		for (Vol& v : vols){
 			// Iterate over vol sublattices
-			int sl = sl_of_vol(l.position);
+			int sl = sl_of_vol(v.position);
 			const auto& volspec = this->primitive_spec.vol_no(sl); // vol reference
 			for (auto& bp : volspec.boundary) {
-				auto plaq = this->get_plaq_at(volspec.position + bp.relative_position);
-				l.boundary[plaq] = bp.multiplier;
-				plaq.coboundary[&l] = bp.multiplier;
+				auto plaq = this->get_plaq_at(v.position + bp.relative_position);
+				v.boundary[plaq] = bp.multiplier;
+				plaq.coboundary[&v] = bp.multiplier;
 			}
 		}
 	}

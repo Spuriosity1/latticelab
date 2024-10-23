@@ -14,3 +14,10 @@ unitcellspectest = executable('unitcellspectest', 'unitcell_spec_test.cpp',
   dependencies: [structtest_deps, test_deps],
   link_with: [structtest_deps_libs, test_dep_libs]
   )
+
+
+jsonllitest = executable('jsonllitest', 'json_lli_test.cpp', 
+  include_directories: project_inc,
+  dependencies: [structtest_deps, test_deps],
+  link_with: [structtest_deps_libs, test_dep_libs]
+  )

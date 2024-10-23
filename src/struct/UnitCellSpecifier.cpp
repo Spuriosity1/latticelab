@@ -1,41 +1,15 @@
 #include "UnitCellSpecifier.hpp"
 #include "chain.hpp"
 #include "modulus.hpp"
+#include "rationalmath.hpp"
 #include <sstream>
 #include <stdexcept>
 
+using namespace rational;
+
 namespace CellGeometry {
 
-#define PPRINT(x) "["<<x[0]<<" "<<x[1]<<" "<<x[2]<<"]"
-
-/*
-void UnitCellSpecifier::insert_position(
-		point_idx_t& hmap,
-		ipos_t x, sl_t sl,
-		const char* obj_name){
-	bool status = hmap.insert(this->UPV.L*x,sl);
-	if (status == false){
-		std::stringstream s;
-		s<<"Failed to add "<<obj_name<<" at "<<pprint(x)<<": ";
-		s<<"There is already a(n) "<<obj_name<<" there\n";
-		throw std::runtime_error(s.str());	
-	}
-}
-
-sl_t UnitCellSpecifier::sl_from_position(point_idx_t& hmap, ipos_t x){
-#ifdef DEBUG
-	return hmap.at(UPV.L * x);
-#else
-	return hmap[UPV.L * x];
-#endif
-}
-
-
-bool UnitCellSpecifier::is_initialised(point_idx_t& hmap,ipos_t x, 
-		const char* obj_name){
-	return hmap.at(x) != -1;
-}
-*/
+// #define PPRINT(x) "["<<x[0]<<" "<<x[1]<<" "<<x[2]<<"]"
 
 
 
@@ -69,21 +43,25 @@ sl_t UnitCellSpecifier::sl_of_vol(const ipos_t& R_) const {
 
 bool UnitCellSpecifier::is_point(const ipos_t& R_){
 	auto R = wrap_copy(R_);
+	assert_valid_position(R);
 	for (size_t i=0; i<points.size(); i++) { if (points[i].position == R) return true; }
 	return false;
 }
 bool UnitCellSpecifier::is_link(const ipos_t& R_){
 	auto R = wrap_copy(R_);
+	assert_valid_position(R);
 	for (size_t i=0; i<links.size(); i++) { if (links[i].position == R) return true; }
 	return false;
 }
 bool UnitCellSpecifier::is_plaq(const ipos_t& R_){
 	auto R = wrap_copy(R_);
+	assert_valid_position(R);
 	for (size_t i=0; i<plaqs.size(); i++) { if (plaqs[i].position == R) return true; }
 	return false;
 }
 bool UnitCellSpecifier::is_vol(const ipos_t& R_){
 	auto R = wrap_copy(R_);
+	assert_valid_position(R);
 	for (size_t i=0; i<vols.size(); i++) { if (vols[i].position == R) return true; }
 	return false;
 }
@@ -93,29 +71,26 @@ template<int _order>
 void throw_bad_boundary(CellSpecifier<_order> p, ipos_t missing_point) {
 	std::stringstream s;
 	s << "Problem with boundary of "<<_order<<"-cell specifier ";
-	s << "at "<<PPRINT(p.position)<<": ";
+	s << "at "<<p.position<<": ";
 	s << "There is no "<<_order-1<<"-cell at " << missing_point;
 	throw std::out_of_range(s.str());
 }
 
 // constructors
-UnitCellSpecifier::UnitCellSpecifier(const imat33_t& lattice_vectors_) :
+//
+UnitCellSpecifier::UnitCellSpecifier(const rmat33& lattice_vectors_) :
 	lattice_vectors(lattice_vectors_),
-	UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
+	lattice_vectors_inverse( inv(lattice_vectors) )
+	//UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
 //	point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
-{}
-
-UnitCellSpecifier::UnitCellSpecifier(const snfmat& lattice_vectors_) :
-	lattice_vectors(from_snfmat(lattice_vectors_)),
-	UPV(ComputeSmithNormalForm(lattice_vectors_))
-	//point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {}
 
 UnitCellSpecifier::UnitCellSpecifier(
 		const UnitCellSpecifier& other,
 		const imat33_t& cellspec) : 
-	lattice_vectors(other.lattice_vectors * cellspec),
-	UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
+	lattice_vectors(other.lattice_vectors * rmat33::from_other(cellspec)),
+	lattice_vectors_inverse( inv(lattice_vectors) )
+	// UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
 	// point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {
 	if (abs(det(cellspec)) != 1) {
@@ -130,8 +105,12 @@ UnitCellSpecifier::UnitCellSpecifier(
 }
 
 void UnitCellSpecifier::wrap(ipos_t& X) const {
-	auto [quot, rem] = moddiv(UPV.L * X, UPV.D);
-	X = UPV.Linv * rem; // guarantees that rem is entrywise in [0,D]
+	rvec3 x = lattice_vectors_inverse * X;
+	for (int i=0; i<3; i++){
+		make_proper(x[i]);
+	}
+	X = lattice_vectors*x;
+
 }
 
 
@@ -141,11 +120,13 @@ void UnitCellSpecifier::wrap(GeometricObject& X) const {
 
 
 void UnitCellSpecifier::add_point(const PointSpec& p){
+	assert_valid_position(p.position);
 	points.push_back(p);
 	wrap(points.back());
 }
 
 void UnitCellSpecifier::add_link(const LinkSpec& p){
+	assert_valid_position(p.position);
 	links.push_back(p);
 	wrap(links.back());
 	// check that boundary is resolvable	
@@ -156,6 +137,7 @@ void UnitCellSpecifier::add_link(const LinkSpec& p){
 }
 
 void UnitCellSpecifier::add_plaq(const PlaqSpec& p){
+	assert_valid_position(p.position);
 	plaqs.push_back(p);
 	wrap(plaqs.back());
 	// check that boundary is resolvable	
@@ -166,6 +148,7 @@ void UnitCellSpecifier::add_plaq(const PlaqSpec& p){
 }
 
 void UnitCellSpecifier::add_vol(const VolSpec& p){
+	assert_valid_position(p.position);
 	vols.push_back(p);
 	wrap(vols.back());
 	// check that boundary is resolvable	

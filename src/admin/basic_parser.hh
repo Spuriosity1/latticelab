@@ -184,35 +184,35 @@ public:
      * @param handle The C string to search for in the infile.
      * @param x The varaible that the parser should store the result in (passed by reference)
      */
-    const void declare(const std::string& handle, bp_int_t* x){
+    void declare(const std::string& handle, bp_int_t* x){
         assert_unique(handle);
         ints[handle] = x;
         index[handle] = paramtype::Int;
         initialised[handle]=false;
     }
     /// @overload
-    const void declare(const std::string& handle, bp_uint_t* x){
+    void declare(const std::string& handle, bp_uint_t* x){
         assert_unique(handle);
         uints[handle] = x;
         index[handle] = paramtype::UInt;
         initialised[handle]=false;
     }
     /// @overload
-    const void declare(const std::string& handle, bp_float_t* x){
+    void declare(const std::string& handle, bp_float_t* x){
         assert_unique(handle);
         floats[handle] = x;
         index[handle] = paramtype::Float;
         initialised[handle]=false;
     }
     /// @overload
-    const void declare(const std::string& handle, bool* b){
+    void declare(const std::string& handle, bool* b){
         assert_unique(handle);
         bools[handle] = b;
         index[handle] = paramtype::Bool;
         initialised[handle]=false;
     }
     /// @overload
-    const void declare(const std::string& handle, std::string* s){
+    void declare(const std::string& handle, std::string* s){
         assert_unique(handle);
         strings[handle] = s;
         index[handle] = paramtype::String;
@@ -221,7 +221,7 @@ public:
 
     // TODO file/dir types with validation
     // /// @overload
-    // const void declare(const std::string& handle, std::filesystem::path* p){
+    // void declare(const std::string& handle, std::filesystem::path* p){
     //     strings[handle] = s;
     //     index.push_back(handle);
     //     initialised[handle]=false;
@@ -236,31 +236,31 @@ public:
      * 
      * @see void declare(const std::string& handle, bp_int_t& x)
      */
-    const void declare_optional(const std::string& handle, bp_int_t* x, bp_int_t default_x){
+    void declare_optional(const std::string& handle, bp_int_t* x, bp_int_t default_x){
         declare(handle, x);
         *x = default_x;
         initialised[handle]=true;
     }
     /// @overload
-    const void declare_optional(const std::string& handle, bp_uint_t* x, bp_uint_t default_x){
+    void declare_optional(const std::string& handle, bp_uint_t* x, bp_uint_t default_x){
         declare(handle, x);
         *x = default_x;
         initialised[handle]=true;
     }
     /// @overload
-    const void declare_optional(const std::string& handle, bp_float_t* x, bp_float_t default_x){
+    void declare_optional(const std::string& handle, bp_float_t* x, bp_float_t default_x){
         declare(handle, x);
         *x = default_x;
         initialised[handle]=true;
     }
     /// @overload
-    const void declare_optional(const std::string& handle, bool* b, bool default_b=false){
+    void declare_optional(const std::string& handle, bool* b, bool default_b=false){
         declare(handle, b);
         *b = default_b;
         initialised[handle]=true;
     }
     /// @overload
-    const void declare_optional(const std::string& handle, std::string* s, const std::string& default_s){
+    void declare_optional(const std::string& handle, std::string* s, const std::string& default_s){
         declare(handle, s);
         *s = default_s;
         initialised[handle]=true;

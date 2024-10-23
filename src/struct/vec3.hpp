@@ -2,10 +2,12 @@
 #define VEC3_CUSTOM_HPP
 
 
+#include "nlohmann/json_fwd.hpp"
+#include <concepts>
 #include <cstddef>
 #include <array>
-// #include <initializer_list>
 #include <iostream>
+#include <nlohmann/json.hpp>
 
 namespace vector3 {
 
@@ -115,6 +117,7 @@ protected:
 
 // Free vector functions
 template <typename T, typename S>
+requires std::convertible_to<S, T>
 vec3<S> operator*(T alpha, const vec3<S>& v){
     vec3<S> copy(v);
 	copy *= static_cast<S>(alpha);
@@ -157,6 +160,29 @@ struct mat33 {
 		return out;
 	}
 
+	static mat33 from_rows(std::array<T, 3> r0,
+			std::array<T, 3> r1,
+			std::array<T, 3> r2){
+		mat33 out;
+
+		for (int col=0; col<3; col++){
+			out(0,col) =r0[col];
+			out(1,col) =r1[col];
+			out(2,col) =r2[col];
+		}
+		return out;
+	}
+	
+	template <typename S>
+	requires std::convertible_to<S, T>
+	static mat33 from_other(mat33<S> other){
+		mat33 retval;
+		for (int i=0; i<9; i++){
+			retval[i] = static_cast<T>(other[i]);
+		}
+		return retval;
+	}
+
 	vec3<T> operator*(const vec3<T>& v) const {
 		vec3<T> res;
 		res[0] = __dot(m_x, v.m_x);
@@ -183,6 +209,15 @@ struct mat33 {
 		}
 		return res;
 	}
+	
+	template <typename S>
+	requires std::convertible_to<S, T>
+	mat33<T> operator*=(const S& alpha){
+		for (int i=0; i<9; i++){
+			this->m_x[i] *= alpha;
+		}
+		return *this;
+	}
 
 	vec3<T> diagonal(){
 		vec3<T> out;
@@ -206,6 +241,46 @@ protected:
 };
 
 
+template <typename T, typename S>
+requires std::convertible_to<S, T>
+mat33<S> operator*(T alpha, const mat33<S>& v){
+    mat33<S> copy(v);
+	copy *= static_cast<S>(alpha);
+	return copy;
+}
+
+// JSON IO
+template<typename T>
+void to_json(nlohmann::json& j, const vec3<T>& v){
+	j = nlohmann::json({v[0], v[1], v[2]});
+}
+
+
+template<typename T>
+void from_json(const nlohmann::json& j, vec3<T>& v){
+	j.at(0).get_to(v[0]);
+	j.at(1).get_to(v[1]);
+	j.at(2).get_to(v[2]);
+}
+
+template<typename T>
+void to_json(nlohmann::json &j, const mat33<T>& M){
+	j = nlohmann::json({
+		{M(0,0),M(0,1),M(0,2)},
+		{M(1,0),M(1,1),M(1,2)},
+		{M(2,0),M(2,1),M(2,2)}
+	});
+}
+
+template<typename T>
+void from_json(const nlohmann::json &j, mat33<T> &M){
+	for (size_t i=0; i<3; i++) {
+		for (size_t k=0; k<3; k++) {
+			j.at(i).at(k).get_to<T>(M(i,k));
+		}
+	}
+	
+}
 
 /// CONVENIENT TYPEDEFS
 typedef vec3<int> vec3i;
@@ -218,10 +293,17 @@ std::ostream& operator<<(std::ostream& os, vec3<T> v){
 }
 
 
+template<typename T>
+std::ostream& operator<<(std::ostream& os, mat33<T> m){
+	os << "["<<m(0,0)<<"\t"<<m(0,1)<<"\t"<<m(0,2)<<"]\n";
+	os << "["<<m(1,0)<<"\t"<<m(1,1)<<"\t"<<m(1,2)<<"]\n";
+	os << "["<<m(2,0)<<"\t"<<m(2,1)<<"\t"<<m(2,2)<<"]\n";
+	return os;
+}
+
 
 // Explicit functions preserving intness
 template<typename V>
-requires std::signed_integral<V>
 inline V det(mat33<V> a){
     return (a(0,0) * (a(1,1) * a(2,2) - a(2,1) * a(1,2))
            -a(1,0) * (a(0,1) * a(2,2) - a(2,1) * a(0,2))

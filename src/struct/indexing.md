@@ -22,13 +22,16 @@ $$
 R = a (Z n + x) + r
 $$
 
-and so we must consider $x$ solutions "modulo Z". This is awkward to implement, so at initialisation we compute the Smith normal form -
+and so we must consider $x$ solutions "modulo Z". This is awkward to implement directly.
+
+
+Instead, at initialisation we compute the Smith normal form -
 $$
 L Z W = D
 $$
 Where $L$ and $W$ are invertible integer valued matrices, and $D$ a diagonal integer matrix.
 
-This tells us that there are exactly $D_{11}D_{22}D_{33}$ primitive unit cells in the enlarged space.
+This tells us that there are exactly $D_{11}D_{22}D_{33}$ primitive unit cells in the supercell.
 
 $$
 R = a L^{-1} (D W^{-1} n + L x) + r

@@ -8,7 +8,6 @@
 #include <concepts>
 #include <cstdint>
 #include <iostream>
-#include <numeric>
 #include <stdexcept>
 #include <nlohmann/json.hpp>
 namespace rational {
@@ -26,68 +25,23 @@ struct Rational {
 	}
 	};
 
-	Rational& operator+=(const Rational& other){
-		int64_t tmp = static_cast<int64_t>(num)*other.denom + static_cast<int64_t>(other.num)*denom;
-		denom = denom * other.denom;
-		num = tmp;
-		return *this;
-	}
+	Rational& operator+=(const Rational& other);
 
-	Rational& operator-=(const Rational& other){
-		int64_t tmp = static_cast<int64_t>(num)*other.denom - static_cast<int64_t>(other.num)*denom;
-		denom = denom * other.denom;
-		num = tmp;
-		return *this;
-	}
+	Rational& operator-=(const Rational& other);
 
-	void simplify(){
-		int64_t this_gcd = std::gcd(num, denom);
-		num /= this_gcd;
-		denom /= this_gcd;
-	}
+	void simplify();
 
-	void make_denom_positive(){
-		if (denom < 0){
-			denom = -denom;
-			num = -num;
-		}
-	}
+	void make_denom_positive();
 
-	Rational& operator/=(int64_t x) {
-		if (x == 0) {
-			throw std::domain_error("Attempted division by zero");
-		}
-		denom *= x;
-		return *this;
-	}
+	Rational& operator/=(int64_t x);
 
+	Rational& operator/=(const Rational& x); 
 
-	Rational& operator/=(const Rational& x) {
-		if (x.num == 0) {
-			throw std::domain_error("Attempted division by zero");
-		}
-		denom *= x.num;
-		num *= x.denom;
-		return *this;
-	}
+	Rational& operator*=(int64_t x) ;
 
-	Rational& operator*=(int64_t x) {
-		num *= x;
-		return *this;
-	}
+	Rational& operator*=(const Rational& x); 
 
-	Rational& operator*=(const Rational& x) {
-		num *= x.num;
-		denom *= x.denom;
-		return *this;
-	}
-
-	Rational operator/(int64_t x) const {
-		if (x == 0) {
-			throw std::domain_error("Attempted division by zero");
-		}
-		return Rational(num, denom*x);
-	}
+	Rational operator/(int64_t x) const; 
 
 	bool operator==(int64_t x) const {
 		return num == x * denom;
@@ -129,27 +83,13 @@ typedef vector3::mat33<Rational> rmat33;
 
 
 //TODO template this BS
-inline void rswap(rmat33& A, int row_i, int row_j, rvec3& b){
-	for (int j=0; j<3; j++){
-		std::swap(A(row_i, j), A(row_j, j));
-	}
-	std::swap(b(row_i), b(row_j));
-}
+void rswap(rmat33& A, int row_i, int row_j, rvec3& b);
+
 
 // Performs A[row_i] <- a*A[row_j] - A[row_i]
-inline void rsub(rmat33& A, Rational a_j, int row_j, int row_i, rvec3& b){
-	for (int j=0; j<3; j++){
-		A(row_i, j) -= a_j*A(row_j, j);
-	}
-	b(row_i) -= a_j*b(row_j);
-}
+void rsub(rmat33& A, Rational a_j, int row_j, int row_i, rvec3& b);
 
-inline void rmult(rmat33& A, int row, Rational a, rvec3& b){
-	for (int j=0; j<3; j++){
-		A(row, j) *= a;
-	}
-	b(row) *= a;
-}
+void rmult(rmat33& A, int row, Rational a, rvec3& b);
 
 inline Rational inv(const Rational& a){	
 	if (a.denom == 0) {
@@ -159,83 +99,10 @@ inline Rational inv(const Rational& a){
 }
 
 // Solves Ax = b using Gaussian elimination
-inline void rlinsolve(rvec3& x, const rmat33& A, const rvec3& b){
-	rmat33 B(A);
-	x = b;
-	
-	for (int col = 0; col<3; col++){
-		// pemute rows until A(col, col) != 0
-		int row = col + 1;
-		while ((B(col,col) == 0)) {
-			if (row > 3){
-				throw std::invalid_argument("Matrix is singular");
-			}
-
-			rswap(B, col, row, x);
-			row += 1;
-		}
-
-		// rmult to make B(col, col) == 1
-		rmult(B, col, inv(B(col,col)), x);
-		// simplify the row
-		for (int ci=col; ci<3; ci++){
-			B(col, ci).simplify();
-		}
-
-		// delete the lower part
-		for (row = col + 1; row < 3; row++){
-			rsub(B, B(row, col), col, row, x);
-		}
-
-		// Simplify
-		for (int i=0; i<9; i++){
-			B[i].simplify();
-		}
-	}
-
-
-	// matrix shold now be upper triangular with 1s on diagonal
-	// Remove top part and simplify answer
-	for (int col=2; col>=0; col--){
-		for (int row=0; row<col; row++){
-			rsub(B, B(row,col), col, row, x);
-		}
-		x[col].simplify();
-	}
-
-	assert(A * x == b);
-
-}
-
+void rlinsolve(rvec3& x, const rmat33& A, const rvec3& b);
 
 // Computes the closed-form, simplified matrix inverse
-inline rmat33 inv(const rmat33& A){
-	auto denom = vector3::det(A);
-	std::array<Rational, 3> b0 = {-A(1, 2) * A(2, 1) + A(1, 1) * A(2, 2),
-		A(0, 2) * A(2, 1) - A(0, 1) * A(2, 2),
-		-A(0, 2) * A(1, 1) + A(0, 1) * A(1, 2)};
-	std::array<Rational, 3> b1 = {A(1, 2) * A(2, 0) - A(1, 0) * A(2, 2),
-		-A(0, 2) * A(2, 0) + A(0, 0) * A(2, 2),
-		A(0, 2) * A(1, 0) - A(0, 0) * A(1, 2)};
-	std::array<Rational, 3> b2 = {-A(1, 1) * A(2, 0) + A(1, 0) * A(2, 1),
-		A(0, 1) * A(2, 0) - A(0, 0) * A(2, 1),
-		-A(0, 1) * A(1, 0) + A(0, 0) * A(1, 1)};
-
-	auto retval =  inv(denom) * rmat33::from_rows(b0,b1,b2);
-	for (int i=0; i<9; i++){
-		retval[i].simplify();
-
-#ifndef NDEBUG
-	if (retval[i].denom == 0) {
-		throw std::domain_error("Inverse of singular matrix");
-	}
-#endif
-
-	}
-
-	return retval;
-}
-
+rmat33 inv(const rmat33& A);
 
 inline std::ostream& operator<<(std::ostream& os, const Rational& r){
 	os << r.num << "/"<<r.denom;
@@ -255,24 +122,7 @@ inline std::istream& operator>>(std::istream& is, Rational& r){
 // Returns an integer Z such that final state X
 // x = Z + X
 // where X has +ve denominator, and x.num is in [0, x.denom)
-inline int64_t make_proper(Rational& x){
-	if (x.denom < 0) {
-		x.denom *= -1;
-		x.num *= -1;
-	}
-#ifdef DEBUG
-	if (x.denom == 0) {
-		throw std::domain_error("Divide by zero in make_proper");
-	}
-#endif
-	auto [quot, rem] = moddiv(x.num, x.denom);
-	assert(rem >= 0);
-	assert(quot*x.denom + rem == x.num);
-	x.num = rem;
-	return quot;
-}
-
-
+int64_t make_proper(Rational& x);
 
 template<typename S>
 requires std::signed_integral<S>
@@ -293,22 +143,21 @@ inline rvec3 operator*(const rmat33& a, const vector3::vec3<S> b){
 }
 
 
-static_assert(std::convertible_to<int, Rational>, "int cannot be implicitly converted");
+/// Approximant finding (thanks chatgpt)
+///
 
-
-
+// Function to find the lower and upper rational approximations
+Rational findNearestRational(double v, int max_denominator=1000, int max_iters=100);
 
 /////////JSON conversions
 using json=nlohmann::json;
 
 inline void to_json(json& j, const Rational& r) {
-	Rational r2 = r;
-	r2.simplify();
-	r2.make_denom_positive();
-	j = json{ {r.num, r.denom} };
+	j = json{ (double) r.num / r.denom };
 }
 
 inline void from_json(const json& j, Rational& r) {
+
 	j.at(0).get_to(r.num);
 	j.at(1).get_to(r.denom);
 }

@@ -33,12 +33,15 @@ struct PeriodicAbstractLattice {
 			const UnitCellSpecifier& specified_primitive,
 			const imat33_t& supercell
 			) : 
-	// Smith decopose the supercell spec to find a primitive cell that aligns nicely with the supercell
+	// Smith decopose the supercell spec to find a primitive cell that aligns 
+	// nicely with the supercell
 	LDW(ComputeSmithNormalForm( to_snfmat(supercell))),
 	// Store the reparameterised supercell
-	cell_vectors(specified_primitive.lattice_vectors * rational::rmat33::from_other(supercell)),
+	cell_vectors(specified_primitive.lattice_vectors 
+			* rational::rmat33::from_other(supercell)),
 	// Cell vectors only used for indexing
-	index_cell_vectors(specified_primitive.lattice_vectors * rational::rmat33::from_other(supercell * LDW.R)),
+	index_cell_vectors(specified_primitive.lattice_vectors 
+			* rational::rmat33::from_other(supercell * LDW.R)),
 	// Store the new primitve cell
 	primitive_spec( specified_primitive,  LDW.Linv ),
 	num_primitive(LDW.D[0]*LDW.D[1]*LDW.D[2])
@@ -116,11 +119,25 @@ public:
  * Wraps r to primitive cell, and returns the primitive-cell index
  *
  * Given a 3D unit cell, seek an index I in [0,D_0) x [0, D_1) x [0, D_2)
- * such that R = b * I + A N + r
- * for arb. N in Z3
+ * such that R = b * (I + D N) + r
+ * for some N in Z3
+ * where b is primitive_spec.lattice_vectors
+ * mutating R to now contain the remainder r
 */
 inline idx3_t PeriodicAbstractLattice::get_supercell_IDX(ipos_t& R) {
-	throw "NOtImplemented";
+	// b^-1 R  = I + D N + b^-1 r
+	rational::rvec3 x = this->primitive_spec.lattice_vectors_inverse * R;
+	idx3_t I;
+	for (int n=0; n<3; n++){
+		x[n].simplify();
+		I[n] = rational::make_proper(x[n]);
+		I[n] = mod(I[n], LDW.D[n]);
+	}
+	R = this->primitive_spec.lattice_vectors * x;
+	for (int n=0; n<3; n++){
+		R[n].simplify();
+	}
+	return I;
 
 }
 
@@ -175,7 +192,7 @@ struct PeriodicPointLattice : public PeriodicAbstractLattice {
 private:
 	void initialise_points(){	
 		idx3_t IDX = {0,0,0};
-		// ensure all have the right number of spaces
+		// Allocate memory for all of the points we want
 		this->points.resize(this->num_primitive*this->primitive_spec.num_point_sl());
 	
 		for (IDX[0]=0; IDX[0]<this->size(0); IDX[0]++){
@@ -233,7 +250,7 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
 	private:
 	void initialise_links(){
 		idx3_t IDX = {0,0,0};
-		// ensure all have the right number of spaces
+		// Aloocate memory for the links
 		this->links.resize(this->num_primitive*this->primitive_spec.num_link_sl());
 		// Place all of the links	
 		for (IDX[0]=0; IDX[0]<this->size(0); IDX[0]++){

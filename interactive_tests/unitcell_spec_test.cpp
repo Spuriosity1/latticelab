@@ -52,12 +52,7 @@ int main (int argc, const char *argv[]) {
     
     PeriodicLinkLattice<Cell<0>,Cell<1>> point_lat(spec, supercell_spec);
 
-    const auto& LDW = point_lat.LDW;
-    std::cout <<"L -> \n"<< LDW.L << "D -> \n" << LDW.D << "\n\n";
-    std::cout <<"L Z W = " << (LDW.L * supercell_spec * LDW.R) << "\n\n";
-    std::cout <<"a Z W = " << spec.lattice_vectors * supercell_spec * LDW.R << "\n";
-    std::cout <<" a L-1 D = " <<  point_lat.primitive_spec.lattice_vectors * LDW.D << "\n";
-    save(point_lat, outpath/"point_lat.json");
+    save(point_lat, outpath/"link_lat.json");
 
 
     

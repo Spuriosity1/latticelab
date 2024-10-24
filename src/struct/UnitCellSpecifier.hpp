@@ -85,6 +85,7 @@ struct UnitCellSpecifier {
 	// The lattice vectors (columns are interpreted as vectors)
 	// [ a1  a2  a3]
 	const rational::rmat33 lattice_vectors;
+	const rational::rmat33 lattice_vectors_inverse; 
 	// Smith decomposition of lattice_vectors
 	//const SNF_decomp UPV;
 
@@ -99,7 +100,11 @@ struct UnitCellSpecifier {
 	// lattice_vectors_inverse * X in [0,1)^3
 	void wrap(ipos_t& X) const;
 	void wrap(GeometricObject& X) const;
-	ipos_t wrap_copy(const ipos_t& X) const { ipos_t Y(X); wrap(Y); return Y; }
+	ipos_t wrap_copy(const ipos_t& X) const {
+		ipos_t Y(X);
+		wrap(Y);
+		return Y;
+	}
 
 	// Const access methods 
 	// with bounds check (consider if needed)
@@ -135,15 +140,12 @@ protected:
 	std::vector<PlaqSpec> plaqs;
 	std::vector<VolSpec> vols;
 
-	// = inv(lattice_vectors)
-	const rational::rmat33 lattice_vectors_inverse; 
-
 	bool is_valid_position(const ipos_t& R){
 		return (R[0].denom != 0) && (R[1].denom != 0) && (R[2].denom != 0);
 	}
 
 	void assert_valid_position(const ipos_t& R){
-#ifndef NDEBUG
+#ifdef DEBUG
 		if ( !is_valid_position(R) ) {
 			throw std::invalid_argument("spec has invalid location");
 		}

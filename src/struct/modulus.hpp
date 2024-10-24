@@ -28,6 +28,7 @@ concept has_static_size = requires(T) {
         { T::size() } -> std::convertible_to<size_t>;
     };
 
+/*
 template<typename T>
 requires has_static_size<T>
 inline std::pair<T, T> moddiv(const T& x, const T& base){
@@ -39,6 +40,7 @@ inline std::pair<T, T> moddiv(const T& x, const T& base){
 	}
 	return retval;
 }
+*/
 
 
 template<typename V>

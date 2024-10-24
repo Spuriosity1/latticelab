@@ -41,6 +41,8 @@ sl_t UnitCellSpecifier::sl_of_vol(const ipos_t& R_) const {
 	throw std::out_of_range(s.str()); 
 }
 
+// testers -- linear search, since these lists should be very small
+// Consider upgrading to binary search or better
 bool UnitCellSpecifier::is_point(const ipos_t& R_){
 	auto R = wrap_copy(R_);
 	assert_valid_position(R);
@@ -107,10 +109,13 @@ UnitCellSpecifier::UnitCellSpecifier(
 void UnitCellSpecifier::wrap(ipos_t& X) const {
 	rvec3 x = lattice_vectors_inverse * X;
 	for (int i=0; i<3; i++){
+		x[i].simplify();
 		make_proper(x[i]);
 	}
 	X = lattice_vectors*x;
-
+	for (int i=0; i<3; i++){
+		X[i].simplify();
+	}
 }
 
 

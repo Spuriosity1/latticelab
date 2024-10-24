@@ -1,6 +1,7 @@
 struct_source = [
 'UnitCellSpecifier.cpp',
-'preset_cellspecs.cpp'
+'preset_cellspecs.cpp',
+'rationalmath.cpp'
 ]
 
 project_sources += struct_source

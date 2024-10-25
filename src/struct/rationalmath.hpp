@@ -17,6 +17,8 @@ struct Rational {
 	int64_t num;
 	int64_t denom;
 
+	Rational() {};
+
 	Rational(int64_t _num) : num(_num), denom(1){};
 
 	Rational(int64_t _num, int64_t _denom) : num(_num), denom(_denom) {
@@ -147,19 +149,18 @@ inline rvec3 operator*(const rmat33& a, const vector3::vec3<S> b){
 ///
 
 // Function to find the lower and upper rational approximations
-Rational findNearestRational(double v, int max_denominator=1000, int max_iters=100);
+Rational find_nearest_rational(double v, int64_t max_denominator=1000, int64_t max_iters=100);
 
 /////////JSON conversions
 using json=nlohmann::json;
-
 inline void to_json(json& j, const Rational& r) {
-	j = json{ (double) r.num / r.denom };
+	j = static_cast<double>( r.num ) / r.denom ;
 }
 
 inline void from_json(const json& j, Rational& r) {
-
-	j.at(0).get_to(r.num);
-	j.at(1).get_to(r.denom);
+	double tmp;
+	j.get_to(tmp);
+	r = find_nearest_rational(tmp, 1000);
 }
 
 };
@@ -180,6 +181,6 @@ struct std::hash<rational::Rational>
     // second and third and combine them using XOR
     // and bit shifting:
 
-    return hash<int64_t>()(k.num / k.denom) ;
+    return hash<int64_t>()(k.num * 0x10000 / k.denom) ;
   }
 };

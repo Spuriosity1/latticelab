@@ -1,7 +1,9 @@
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
+import numpy.linalg as LA
 import json
+import itertools
 
 if len(sys.argv) < 3:
     print(f"USAGE: {sys.argv[0]} <dump.json> [points|links|plaqs|vols]")
@@ -35,6 +37,7 @@ def get_faces(M):
         faces.append([x + vec_c for x in f])
     return faces
 
+
 for f in get_faces(A):
     ax.plot(*np.array(f, dtype=np.float64).T, color='k')
 
@@ -43,16 +46,17 @@ for f in get_faces(aLinv):
     ax.plot(*np.array(f, dtype=np.float64).T, color='green')
 
 
-
-def plot_points(point_data):
+def plot_points(data):
+    point_data = data['points']
     xyz = []
     for x in point_data:
         xyz.append(x['pos'])
 
-
     ax.scatter(*np.array(xyz).T, color='r', marker='o')
 
-def plot_links(link_data): 
+
+def plot_links(data):
+    link_data = data['links']
     xyz = []
     for x in link_data:
         xyz.append(x['pos'])
@@ -69,8 +73,27 @@ def plot_links(link_data):
 
         # it should now be possible to deduce the correct wrapping of p0, p1,
         # such that all are in same cell
-        ax.quiver(*p0['pos'], *(np.array(x['pos']) - p0['pos']), color='k')
-        ax.quiver(*x['pos'], *(np.array(p1['pos'])-x['pos']), color='k', arrow_length_ratio=0)
+        dx0 = (np.array(p0['pos']) - x['pos'])
+        dx1 = (np.array(p1['pos']) - x['pos'])
+
+        n = np.cross(dx0, dx1)
+        if LA.norm(n) > 1e-10:
+            candidate_X1 = dx1
+            candidate_X0 = dx0
+            for idx in itertools.product((-1, 0, 1), (-1, 0, 1), (-1, 0, 1)):
+                tmp = dx1 + A@idx
+                if LA.norm(tmp) < LA.norm(candidate_X1):
+                    candidate_X1 = tmp
+
+                tmp = dx0 + A@idx
+                if LA.norm(tmp) < LA.norm(candidate_X0):
+                    candidate_X0 = tmp
+
+            dx0 = candidate_X0
+            dx1 = candidate_X1
+
+        ax.quiver(*p0['pos'], *(-dx0), color='k')
+        ax.quiver(*p1['pos'], *(-dx1), color='k', arrow_length_ratio=0)
 
 
 func_to_run = {
@@ -79,7 +102,7 @@ func_to_run = {
         }
 
 for arg in sys.argv[2:]:
-    func_to_run[arg](data[arg])
+    func_to_run[arg](data)
 
 
 plt.show()

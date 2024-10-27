@@ -6,8 +6,8 @@
 namespace CellGeometry {
 namespace PrimitiveSpecifers {
 
-struct Pyrochlore : public UnitCellSpecifier {
-	Pyrochlore() : UnitCellSpecifier(
+struct Diamond : public UnitCellSpecifier {
+	Diamond() : UnitCellSpecifier(
 		rational::rmat33::from_cols({0, 4, 4}, {4, 0, 4}, {4, 4, 0}) )
 	{
 		setup_points();

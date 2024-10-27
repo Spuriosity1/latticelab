@@ -65,7 +65,7 @@ int main (int argc, char *argv[]) {
 	}
     // Import and construct the cell specifier (this can be done statically
     // in principle, but there is very little point optimising it)
-    const PrimitiveSpecifers::Pyrochlore pyrospec;
+    const PrimitiveSpecifers::Diamond pyrospec;
 
     // Construct the periodic lattice extension using these extensions
     PeriodicLattice lat(pyrospec, imat33_t::from_cols({2,0,0},{0,2,0},{0,0,2}));

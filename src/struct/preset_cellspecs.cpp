@@ -5,7 +5,7 @@ namespace CellGeometry {
 namespace PrimitiveSpecifers {
 
 
-	void Pyrochlore::setup_points(){
+	void Diamond::setup_points(){
 		const std::vector<ipos_t> point_positions = {{0, 0, 0}, {2, 2, 2}};
 		// set up the points
 		CellGeometry::PointSpec pointspec;
@@ -15,7 +15,7 @@ namespace PrimitiveSpecifers {
 		}
 	}
 
-	void Pyrochlore::setup_links(){
+	void Diamond::setup_links(){
 		// set up the links
 		const std::vector<ipos_t> link_positions = {
 			{1, 1, 1}, {1, -1, -1}, {-1, 1, -1}, {-1, -1, 1}};
@@ -27,7 +27,7 @@ namespace PrimitiveSpecifers {
 		}
 	}
 
-	void Pyrochlore::setup_plaqs(){
+	void Diamond::setup_plaqs(){
 		// set up the plaqs	
 		const ipos_t plaq_positions[4]  = {
 			{-3,-3,-3}, {-3,-1,-1}, {-1,-3,-1}, {-1,-1,-3}
@@ -64,7 +64,7 @@ namespace PrimitiveSpecifers {
 		}
 	}
 
-	void Pyrochlore::setup_vols(){
+	void Diamond::setup_vols(){
 		const std::vector<ipos_t> vol_positions = {
 			{4,4,4},{6,6,6}
 		};

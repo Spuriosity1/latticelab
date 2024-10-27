@@ -45,7 +45,7 @@ int main (int argc, const char *argv[]) {
 
     std::cout<<"Constructing supercell of dimensions \n"<<supercell_spec<<std::endl;
 
-    // const PrimitiveSpecifers::Pyrochlore spec;
+    // const PrimitiveSpecifers::Diamond spec;
     const PrimitiveSpecifers::Cubic spec;
 
     // Construct the periodic lattice extension using these extensions

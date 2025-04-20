@@ -150,7 +150,7 @@ public:
     void from_argv(int argc, const char** argv, int start=1);
 
     /**
-     * @brief Reads an input file, setting all of the known variables using it
+     * @brief Outputs an input file, setting all of the known variables using it
      * 
      * @param fname Filename (C string)
      * @param delimiter Delimiter (C string)
@@ -265,10 +265,7 @@ public:
         *s = default_s;
         initialised[handle]=true;
     }
-    
-
     // TODO: file handler
-
 
     /**
      * @brief Lists all parameter handles.

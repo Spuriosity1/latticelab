@@ -95,6 +95,9 @@ def plot_links(data):
         ax.quiver(*p0['pos'], *(-dx0), color='k')
         ax.quiver(*p1['pos'], *(-dx1), color='k', arrow_length_ratio=0)
 
+def plot_plaqs(data):
+    plaq_data = data["plaqs"]
+
 
 func_to_run = {
         'points': plot_points,

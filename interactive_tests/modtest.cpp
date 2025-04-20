@@ -1,8 +1,8 @@
-#include "struct/rationalmath.hpp"
+#include "rationalmath.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <cassert>
-#include <struct/modulus.hpp>
+#include <modulus.hpp>
 
 
 int main (int argc, char *argv[]) {

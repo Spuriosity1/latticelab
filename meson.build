@@ -4,6 +4,7 @@ project('lattice_lib', ['cpp', 'c'],
   default_options : [ 'warning_level=3', 'buildtype=debug', 'cpp_std=c++2a' ]
 )
 
+project_description = 'Indexing library for lattices'
 
 cmake = import('cmake')
 
@@ -14,10 +15,9 @@ project_header_files = []
 project_test_sources = []
 project_benchmark_sources = []
 
-project_inc = []
+project_inc = ['include']
 project_lib = []
 
-# add further include dirs here
 add_global_arguments('-DDEBUG', language : 'cpp')
 
 
@@ -29,12 +29,10 @@ snf_dep = snf_project.get_variable('snf_dep')
 
 
 # Configure the CMake project
-sub_proj = cmake.subproject('HighFive')
+HighFive_subproj = cmake.subproject('HighFive')
 
 # Fetch the dependency object
-highfive_dep = sub_proj.dependency('HighFive')
-
-
+highfive_dep = HighFive_subproj.dependency('HighFive')
 
 
 # import the #define directives
@@ -42,8 +40,8 @@ cpp_proj_arguments = snf_project.get_variable('cpp_proj_arguments')
 add_project_arguments(cpp_proj_arguments, language : 'cpp')
 
 
-global_deps = [
-  #dependency('Armadillo', required: true),
+main_deps = [
+  #  dependency('Armadillo', required: true),
   #  dependency('argparse', required: true),
   #  dependency('HDF5', required: true),
   dependency('nlohmann_json', required: true),
@@ -51,9 +49,12 @@ global_deps = [
   highfive_dep
   ]
 
-# builds libraries
-subdir('src')
 
+
+# builds librariesg_include
+g_include = include_directories(project_inc)
+
+subdir('src')
 
 # build tests
 if get_option('enable-tests')
@@ -65,8 +66,8 @@ endif
 # builds the main executable
 # main_bin = executable('generate_spinon_basis', gen_spinon_basis_source,include_directories: project_inc,  dependencies: global_deps,   link_with: project_lib)
 
-largeS_MC_sources=['src/largeS-QSI.cpp']
-main_bin = executable('largeS_MC', largeS_MC_sources, include_directories: project_inc,  dependencies: global_deps,   link_with: project_lib)
+# largeS_MC_sources=['src/largeS-QSI.cpp', 'src/semiclassic_qsi.cpp']
+# main_bin = executable('largeS-QSI', largeS_MC_sources, include_directories: project_inc,  dependencies: global_deps,   link_with: project_lib)
 
 
 #

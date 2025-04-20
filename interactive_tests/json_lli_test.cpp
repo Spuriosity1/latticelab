@@ -1,6 +1,5 @@
 #include "nlohmann/json.hpp"
-#include "nlohmann/json_fwd.hpp"
-#include "struct/vec3.hpp"
+#include "vec3.hpp"
 #include <iostream>
 #include <sstream>
 
@@ -8,9 +7,10 @@
 using namespace vector3;
 using namespace nlohmann;
 
+// Tests long long int deserailisation (in hex)
 int main (int argc, char *argv[]) {
 	if (argc < 4){
-		std::cout << "USAGE: "<<argv[0]<<"v1 v2 v3\n";
+		std::cout << "USAGE: "<<argv[0]<<" v1 v2 v3\n";
 	}
 
 	vec3<long long int> v;

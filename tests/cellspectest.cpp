@@ -518,3 +518,14 @@ TEST_F(PyroVolTest, ConstructVolCube){
 }
 
 
+TEST_F(PyroVolTest, VolBoundaryClosed){
+	PeriodicVolLattice_std lat(cell, 
+			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
+			);
+	for (const auto& v : lat.get_vols()){
+		std::cout<<"Vol " << v.position <<" ";
+		std::cout<<"Boundary = "<<v.boundary<<"\n";
+		auto dB = d(v.boundary);
+		EXPECT_TRUE(dB== Chain<1>());
+	}
+}

@@ -50,7 +50,6 @@ inline std::string hash_parameters(
 int main (int argc, const char *argv[]) {
 	std::string Z1_s, Z2_s, Z3_s;
 	double cell_disorder[4];
-    int lat_order;
 
     std::filesystem::path outpath;
 
@@ -59,7 +58,6 @@ int main (int argc, const char *argv[]) {
     args.declare("Z2", &Z2_s);
     args.declare("Z3", &Z3_s);
 
-    args.declare("lat_order", &lat_order);
 	
     args.declare_optional("cell0_disorder",cell_disorder, 0.);
     args.declare_optional("cell1_disorder",cell_disorder+1, 0.);
@@ -85,7 +83,6 @@ int main (int argc, const char *argv[]) {
     const PrimitiveSpecifers::Diamond spec;
     auto name = hash_parameters(Z1_s, Z2_s, Z3_s, cell_disorder);
 
-    assert (lat_order >= 0 && lat_order <= 3);
 
 
     // Construct the periodic lattice extension using these extensions
@@ -94,8 +91,9 @@ int main (int argc, const char *argv[]) {
     PeriodicPlaqLattice<Cell<0>, Cell<1>, Cell<2>> lat2(spec, supercell_spec);
     PeriodicVolLattice<Cell<0>, Cell<1>, Cell<2>, Cell<3>> lat3(spec, supercell_spec);
 
-    auto lat = lat2;
+    auto lat = lat3;
 
+    // debug
     lat.print_state();
 
     
@@ -110,7 +108,6 @@ int main (int argc, const char *argv[]) {
     }
 
     if (cell_disorder[1]>1e-16){
-        assert(lat_order >= 1);
         std::cout<<"Deleting "<<cell_disorder[1]*100<<"% of 1-cells"<<std::endl;
         for (auto l : lat.get_links()){
             if (rand() > cell_disorder[1]){

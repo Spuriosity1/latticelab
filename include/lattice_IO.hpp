@@ -37,8 +37,7 @@ namespace CellGeometry {
 		pt["coboundary"] = {};
 		for (const auto& [cellptr, mult] : obj.coboundary){
 			pt["coboundary"].push_back({
-					{"pos",cellptr->position},
-					{"mult", mult}
+					cellptr->position, mult
 					});
 		}
 	}
@@ -47,11 +46,9 @@ namespace CellGeometry {
 	requires (order > 0)
 	inline void store_boundary(const T& obj, nlohmann::json& pt){
 		pt["boundary"] = {};
-		for (const auto& [cellptr, mult] : obj.boundary){
-			
+		for (const auto& [cellptr, mult] : obj.boundary){	
 			pt["boundary"].push_back({
-					{"pos",cellptr->position},
-					{"mult", mult}
+					cellptr->position, mult
 					});
 		}
 	}

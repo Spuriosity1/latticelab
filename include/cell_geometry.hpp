@@ -538,8 +538,9 @@ struct PeriodicVolLattice : public PeriodicPlaqLattice<Point,Link,Plaq>
 		// remove coreferences
 		//
 		for (auto [p, _] : vol_ptr->boundary){
-			static_assert(std::is_same_v<decltype(p), Plaq*>, "p has incorrect type");
-			p->coboundary.erase(vol_ptr);
+			static_assert(std::is_same_v<decltype(p), Plaq* const>,
+					"p has incorrect type");
+			p->coboundary.erase(const_cast<Vol*>(vol_ptr));
 		}
 		// remove from index
 		vols.erase(get_vol_idx_at(vol_ptr->position));

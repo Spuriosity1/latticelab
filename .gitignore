@@ -1,5 +1,6 @@
 build/**
 .cache
 .rgignore
+.DS_Store
 subprojects/googletest-1.15.0
 subprojects/packagecache

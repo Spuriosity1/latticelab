@@ -1,9 +1,9 @@
 #pragma once 
 
+#include <concepts>
 #include <cstddef>
 #include <memory>
 #include <ranges>
-#include <type_traits>
 #include <vector>
 #include <cstdlib>
 #include <smithNormalForm.hpp>
@@ -46,9 +46,9 @@ struct PeriodicAbstractLattice {
 	// Cell vectors only used for indexing
 	index_cell_vectors(specified_primitive.lattice_vectors 
 			* rational::rmat33::from_other(supercell * LDW.R)),
+	num_primitive(LDW.D[0]*LDW.D[1]*LDW.D[2]),
 	// Store the new primitve cell
-	primitive_spec( specified_primitive,  LDW.Linv ),
-	num_primitive(LDW.D[0]*LDW.D[1]*LDW.D[2])
+	primitive_spec( specified_primitive,  LDW.Linv )
 	{
 	}
 
@@ -65,14 +65,15 @@ struct PeriodicAbstractLattice {
 	idx3_t get_supercell_IDX(ipos_t&R);
 
 
-	///////////////////////////////////////////////////////
-// protected:
+
+protected:
 	// The Smith decompositions of the supercell spec Z, for indexing purposes
 	const SNF_decomp LDW;
 	inline size_t idx_from_idx3(const idx3_t&I){
 		return (I[2]*LDW.D[1] + I[1])*LDW.D[0] + I[0];
 	}
 public:
+	///////////////////////////////////////////////////////
 	// 3-vectors, arranged columnwise, corresponding to supercell lengths 
 	// i.e. j'th vector is cell_vectors[:, j]
 	// a0 b0 c0
@@ -81,10 +82,12 @@ public:
 	const rational::rmat33 cell_vectors; // = specified primitive * supercell
 	const rational::rmat33 index_cell_vectors;
 
-	// The primitive cell used after SNF decomposition
-	const UnitCellSpecifier primitive_spec;
 	// The number of primitive cells
 	const int num_primitive;
+
+	// The primitive cell used after SNF decomposition
+	const UnitCellSpecifier primitive_spec;
+	//const rational::rmat33 primitive_cell_vectors;
 };
 
 
@@ -158,6 +161,33 @@ inline idx3_t PeriodicAbstractLattice::get_supercell_IDX(ipos_t& R) {
  */   
 
 
+template<typename T>
+void display_boundary(T boundary, unsigned verbosity){
+	if (verbosity < 2) return;
+	for (const auto& [p, _] : boundary) {
+		std::cout << "d   boundary cell at " << p << "; coboundary size " << p->coboundary.size() << std::endl;
+		if (verbosity >= 3){
+			for (const auto& [link_ptr, coeff] : p->coboundary) {
+				std::cout << "Dd      at " << link_ptr << " coeff " << coeff << std::endl;
+			}
+		}
+	}
+}
+
+template <typename T>
+void display_coboundary(T coboundary, unsigned verbosity){
+	if (verbosity < 2) return;
+	for (const auto& [p, _] : coboundary) {
+		std::cout << "d   coboundary Plaq at " << p << "; boundary size " << p->boundary.size() << std::endl;
+		if (verbosity >= 3){
+			for (const auto& [link_ptr, coeff] : p->boundary) {
+				std::cout << "Dd      at " << link_ptr << " coeff " << coeff << std::endl;
+			}
+		}
+	}
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 ///////// POINTS
@@ -181,18 +211,38 @@ struct PeriodicPointLattice : public PeriodicAbstractLattice {
 	// sl -> a sublattice index
 	//
 	inline Point& get_point_at(const ipos_t &R){
-		return *points[ get_point_idx_at(R) ];
+		return *points.at(get_point_idx_at(R) );
 	}
 
 	// const accessors	
 	inline const Point& get_point_at(const ipos_t& R) const { return get_point_at(R); }
 //	inline const Point& get_point_at(const idx3_t& I, sl_t sl) const { return get_point_at(I, sl);}
 
+	// Tests if point exists in the map (slow; in principle can do in log time if we know spin* are sorted)
+	bool has_point(const Point* point_it) const {
+		for (const auto& [_, p] : points){
+			if (p == point_it) return true;
+		}
+		return false;
+	}
+
 	// Deletes a point and all references to it
-	void erase_point(const Point* point_it){
+	void erase_point(Point* point_it){
 		points.erase(this->get_point_idx_at(point_it->position));
 		delete point_it;
 	}
+
+	void print_state(unsigned verbosity=3){
+		if (verbosity == 0) {
+			std::cout<< points.size() << " points" << std::endl;
+			return;
+		}
+		for (auto [R, x] : points){
+			std::cout<< "Point " << x <<" at "<<x->position<<std::endl;
+			display_coboundary(x->coboundary, verbosity);
+		}
+	}
+
 
     auto get_points() {
         return points 
@@ -205,8 +255,6 @@ struct PeriodicPointLattice : public PeriodicAbstractLattice {
              | std::views::values 
              | std::views::transform([](Point* p) -> Point const& { return *p; });
     } 
-
- 
 
 	// Contains the 'point' geometric objects
 	std::map<sl_t, Point*> points;
@@ -228,7 +276,7 @@ private:
 		for (IDX[2]=0; IDX[2]<this->size(2); IDX[2]++){
 			for (sl_t sl=0; sl< this->primitive_spec.num_point_sl(); sl++){
 				const PointSpec& spec = primitive_spec.point_no(sl);
-				auto tmp = new Point();
+				Point* tmp = new Point();
 				tmp->position = spec.position + primitive_spec.lattice_vectors * IDX;
 				points[get_point_idx_at(tmp->position)] = tmp;
 			}
@@ -263,16 +311,15 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
 	// sl -> a sublattice index
 	//
 	inline Link& get_link_at(const ipos_t &R){
-		return *links[get_link_idx_at(R)];
+		return *links.at(get_link_idx_at(R));
 	}
 
 	inline const Link& get_link_at(const ipos_t& R) const { return get_link_at(R); }
 
 	// Deletes a link (and erases corresponding coboundary terms in point)
-	void erase_link(const Link* link_ptr){
+	void erase_link(Link* link_ptr){
 		for (auto [p, _] : link_ptr->boundary){
-			//static_assert(std::is_same_v<decltype(p), Point*>, "p has incorrect type");
-			p->coboundary.erase(const_cast<Link*>(link_ptr));
+			p->coboundary.erase(link_ptr);
 			// silently fails if link_it not in the coboundary
 		}
 		// remove from the index
@@ -280,10 +327,25 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
 		delete link_ptr;
 	}
 
+
+	// Tests if link exists in the map (slow; in principle can do in log time if we know spin* are sorted)
+	bool has_link(const Link* link_it) const {
+		for (const auto& [_, p] : links){
+			if (p == link_it) return true;
+		}
+		return false;
+	}
+
 	// Deletes a point (and connected links)
-	void erase_point(const Point* point_ptr) {
+	void erase_point(Point* point_ptr) {
 		// remove connected links
+		std::vector<Link*> to_purge;
 		for (auto [link_ptr, _] : point_ptr->coboundary){
+			to_purge.push_back(static_cast<Link*>(link_ptr));
+		}
+		// note that erase_link modifies the point coboundary,
+		// invalidating the iterator
+		for (auto& link_ptr : to_purge) {
 			erase_link( link_ptr );
 		}
 		PeriodicPointLattice<Point>::erase_point(point_ptr);
@@ -304,16 +366,18 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
 
 	std::map<sl_t, Link*> links;
 
-	void print_state(){
+	void print_state(unsigned verbosity=3){
+		PeriodicPointLattice<Point>::print_state(verbosity);
+		if (verbosity == 0) {
+			std::cout<< links.size() << " links" << std::endl;
+			return;
+		}
 		for (auto [R, l] : links){
-			std::cout<< "Link " << l <<" :"<<std::endl;
-			for (const auto& [p, _] : l->boundary) {
-				std::cout << "  Link boundary includes Point at " << p << std::endl;
-				std::cout << "  Point coboundary size: " << p->coboundary.size() << std::endl;
-				for (const auto& [link_ptr, coeff] : p->coboundary) {
-					std::cout << "    → Link at " << link_ptr << " with coeff " << coeff << std::endl;
-				}
-			}
+			std::cout<< "Link " << l <<" at "<<l->position<<std::endl;
+
+			display_boundary(l->boundary, verbosity);
+			display_coboundary(l->coboundary, verbosity);
+			
 		}
 	}
 
@@ -389,19 +453,26 @@ struct PeriodicPlaqLattice : public PeriodicLinkLattice<Point,Link>
 	// sl -> a sublattice index
 	//
 	inline Plaq& get_plaq_at(const ipos_t &R){
-		return *plaqs[ get_plaq_idx_at(R) ];
+		return *plaqs.at(get_plaq_idx_at(R));
 	}
 
 	// const accessors	
 	inline const Plaq& get_plaq_at(const ipos_t& R) const { return get_plaq_at(R); }
 
 
+	// Tests if plaq exists in the map (slow; in principle can do in log time if we know spin* are sorted)
+	bool has_plaq(const Plaq* plaq_it) const {
+		for (const auto& [_, p] : plaqs){
+			if (p == plaq_it) return true;
+		}
+		return false;
+	}
+
 	//Deletes a plaquette
-	void erase_plaq( const Plaq* plaq_ptr){
+	void erase_plaq(Plaq* plaq_ptr){
 		// remove coreferences
 		for (auto [l, _] : plaq_ptr->boundary){
-			static_assert(std::is_same_v<decltype(l), Link* const>, "l has incorrect type");
-			l->coboundary.erase(const_cast<Plaq*>(plaq_ptr));
+			l->coboundary.erase(plaq_ptr);
 			// silently fails if plaq_ptr not in the coboundary
 		}
 		// remove from index
@@ -410,9 +481,15 @@ struct PeriodicPlaqLattice : public PeriodicLinkLattice<Point,Link>
 	}
 
 	// Deletes a link (and associated points, plaqs...)
-	void erase_link( const Link* link_ptr){
-		// remove connected plaqs (merging too weird to think about...)
+	void erase_link(Link* link_ptr){
+		// remove connected plaqs 
+		// note that erase_plaq invalidates the coboundary iterator, 
+		// so we must iterate then store
+		std::vector<Plaq*> to_purge;
 		for (auto [plaq_ptr, _]: link_ptr->coboundary){
+			to_purge.push_back(static_cast<Plaq*>(plaq_ptr));
+		}
+		for (auto plaq_ptr : to_purge){
 			erase_plaq(plaq_ptr);
 		}
 		PeriodicLinkLattice<Point, Link>::erase_link(link_ptr);
@@ -421,8 +498,12 @@ struct PeriodicPlaqLattice : public PeriodicLinkLattice<Point,Link>
 	// cascades up - deletes all connected plaqs too
 	void erase_point(const Point* point_ptr){
 		// remove connected links
+		std::vector<Link*> to_purge; 
 		for (auto [link_ptr, _] : point_ptr->coboundary){
-			erase_link(link_ptr );
+			to_purge.push_back(static_cast<Link*>(link_ptr));
+		}
+		for (auto link_ptr : to_purge){
+			erase_link(link_ptr);
 		}
 		PeriodicPointLattice<Point>::erase_point(point_ptr);
 	}
@@ -443,17 +524,17 @@ struct PeriodicPlaqLattice : public PeriodicLinkLattice<Point,Link>
 	std::map<sl_t, Plaq*> plaqs;
 
 
-	void print_state(){
-		PeriodicLinkLattice<Point, Link>::print_state();
+	void print_state(unsigned verbosity =3){
+		PeriodicLinkLattice<Point, Link>::print_state(verbosity);	
+		if (verbosity == 0) {
+			std::cout<< plaqs.size() << " plaqs" << std::endl;
+			return;
+		}
+
 		for (auto [R, pl] : plaqs){
-			std::cout<< "Plaq " << pl <<" :"<<std::endl;
-			for (const auto& [p, _] : pl->boundary) {
-				std::cout << "  Plaq boundary includes Link at " << p << std::endl;
-				std::cout << "  Link coboundary size: " << p->coboundary.size() << std::endl;
-				for (const auto& [link_ptr, coeff] : p->coboundary) {
-					std::cout << "    → Link at " << link_ptr << " with coeff " << coeff << std::endl;
-				}
-			}
+			std::cout<< "Plaq " << pl <<" at " <<pl->position<<std::endl;
+			display_boundary(pl->boundary, verbosity);
+			display_coboundary(pl->coboundary, verbosity);
 		}
 
 	}
@@ -527,20 +608,26 @@ struct PeriodicVolLattice : public PeriodicPlaqLattice<Point,Link,Plaq>
 	// sl -> a sublattice index
 	//
 	inline Vol& get_vol_at(const ipos_t &R){
-		return *vols[get_vol_idx_at(R)];
+		return *vols.at(get_vol_idx_at(R));
 	}
 
 	// const accessors	
 	inline const Vol& get_vol_at(const ipos_t& R) const { return get_vol_at(R); }
 
 
-	void erase_vol( const Vol* vol_ptr){
+	// Tests if vol exists in the map (slow; in principle can do in log time if we know spin* are sorted)
+	bool has_vol(const Vol* vol_it) const {
+		for (const auto& [_, p] : vols){
+			if (p == vol_it) return true;
+		}
+		return false;
+	}
+
+
+	void erase_vol(Vol* vol_ptr){
 		// remove coreferences
-		//
 		for (auto [p, _] : vol_ptr->boundary){
-			static_assert(std::is_same_v<decltype(p), Plaq* const>,
-					"p has incorrect type");
-			p->coboundary.erase(const_cast<Vol*>(vol_ptr));
+			p->coboundary.erase(vol_ptr);
 		}
 		// remove from index
 		vols.erase(get_vol_idx_at(vol_ptr->position));
@@ -549,28 +636,40 @@ struct PeriodicVolLattice : public PeriodicPlaqLattice<Point,Link,Plaq>
 
 
 	//Deletes a plaquette
-	void erase_plaq(const Plaq* plaq_ptr){
+	void erase_plaq(Plaq* plaq_ptr){
 		// delete volumes
+		std::vector<Vol*> to_purge;
 		for (auto [v, _] : plaq_ptr->coboundary){
-			erase_vol(v);
+			to_purge.push_back(static_cast<Vol*>(v));
 		}
+		for (auto v : to_purge) { erase_vol(v); }
+
 		PeriodicPlaqLattice<Point, Link, Plaq>::erase_plaq(plaq_ptr);
 	}
 
 	// Deletes a link (and associated points, plaqs...)
-	void erase_link(const Link* link_ptr){
+	void erase_link(Link* link_ptr){
 		// remove connected plaqs (merging too weird to think about...)
+		std::vector<Plaq*> to_purge;
 		for (auto [plaq_ptr, _]: link_ptr->coboundary){
+			to_purge.push_back(static_cast<Plaq*>(plaq_ptr));
+		}
+		for (auto plaq_ptr : to_purge){
 			erase_plaq(plaq_ptr);
 		}
 		PeriodicLinkLattice<Point, Link>::erase_link(link_ptr);
 	}
 
 	// cascades up - deletes all connected plaqs too
-	void erase_point(const Point* point_ptr){
+	void erase_point(Point* point_ptr){
 		// remove connected links
-		for (auto [link_ptr, _] : point_ptr->coboundary){
-			erase_link(link_ptr );
+
+		std::vector<Link*> to_purge;
+		for (auto [c1_ptr, _] : point_ptr->coboundary){
+			to_purge.push_back(static_cast<Link*>(c1_ptr));
+		}
+		for (auto link_ptr: to_purge){
+			erase_link(link_ptr);
 		}
 		PeriodicPointLattice<Point>::erase_point(point_ptr);
 	}
@@ -588,6 +687,21 @@ struct PeriodicVolLattice : public PeriodicPlaqLattice<Point,Link,Plaq>
     } 
 
 	std::map<sl_t, Vol*> vols;
+
+
+	void print_state(unsigned verbosity=3){
+		PeriodicPlaqLattice<Point, Link, Plaq>::print_state(verbosity);
+		if (verbosity == 0) {
+			std::cout<< vols.size() << " vols" << std::endl;
+			return;
+		}
+		for (auto [R, pl] : vols){
+			std::cout<< "Vol " << pl <<" at " <<pl->position<<std::endl;
+			display_boundary(pl->boundary, verbosity);
+		}
+
+
+	}
 
 
 private:
@@ -628,6 +742,32 @@ private:
 	}
 };
 
+
+
+template <typename T>
+requires (CellOfAnyOrder<T> && T::order > 0)
+std::vector<T*> get_neighbours(T* x0){
+    std::vector<T*> retval;
+    for (auto& [pl, m] : x0->boundary){
+        for (auto& [x1, _] : pl->coboundary){
+            if (x1 != x0) retval.push_back(static_cast<T*>(x1));
+        }
+    }
+    return retval;
+}
+
+
+template <typename T, int order>
+requires (CellOfAnyOrder<T> && T::order < 3)
+std::vector<T*> get_coneighbours(T* x0){
+    std::vector<T*> retval;
+    for (auto& [pl, m] : x0->coboundary){
+        for (auto& [x1, _] : pl->boundary){
+            if (x1 != x0) retval.push_back(static_cast<T*>(x1));
+        }
+    }
+    return retval;
+}
 
 
 

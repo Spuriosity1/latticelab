@@ -1,5 +1,6 @@
 #pragma once
 
+#include "UnitCellSpecifier.hpp"
 #include "cell_geometry.hpp"
 #include "chain.hpp"
 #include "nlohmann/json_fwd.hpp"
@@ -31,33 +32,32 @@ namespace CellGeometry {
 		j["primitive_cell_vectors"] = lat.primitive_spec.lattice_vectors;
 	}
 
+	template<int order>
+	inline void store_chain(const Chain<order>& chain, nlohmann::json& pt){
+		for (const auto& [cellptr, mult] : chain){
+			pt.push_back({cellptr->position, mult});
+		}
+	}
+
 	template<int order, CellLike<order> T>
 	requires (order < 3)
 	inline void store_coboundary(const T& obj, nlohmann::json& pt){
 		pt["coboundary"] = {};
-		for (const auto& [cellptr, mult] : obj.coboundary){
-			pt["coboundary"].push_back({
-					cellptr->position, mult
-					});
-		}
+		store_chain(obj.coboundary, pt["coboundary"]);
 	}
 
 	template<int order, CellLike<order> T>
 	requires (order > 0)
 	inline void store_boundary(const T& obj, nlohmann::json& pt){
 		pt["boundary"] = {};
-		for (const auto& [cellptr, mult] : obj.boundary){	
-			pt["boundary"].push_back({
-					cellptr->position, mult
-					});
-		}
+		store_chain(obj.boundary, pt["boundary"]);
 	}
 
 	template<CellLike<0> Point>
 	inline void write_data(const PeriodicPointLattice<Point>& lat, nlohmann::json& j){
 		write_data(static_cast<const PeriodicAbstractLattice&>(lat), j);
 		j["points"] = {};
-		for (const auto& point : lat.get_points()){
+		for (const auto& point: lat.get_points()){
 			nlohmann::json pt = {{"pos", point.position}};	
 			store_coboundary<0>(point, pt);
 			j["points"].push_back(pt);
@@ -107,11 +107,11 @@ namespace CellGeometry {
 	inline void write_data(const PeriodicVolLattice<Point, Link, Plaq, Vol>& lat,
 			nlohmann::json& j){
 		write_data(static_cast<const PeriodicPlaqLattice<Point, Link, Plaq>&>(lat), j);
-		j["volumes"] = {};
+		j["vols"] = {};
 		for (const auto& vol : lat.get_vols()){
 			nlohmann::json v = {{"pos", vol.position}};
 			store_boundary<3>(vol, v);
-			j["volumes"].push_back(v);
+			j["vols"].push_back(v);
 		}
 	}
 

@@ -12,39 +12,6 @@
 #endif
 
 using namespace CellGeometry;
-/*
-typedef pointMap<ipos_t, sl_t> pmap_t;
-
-
-TEST(PointMap, slMap) {
-	pmap_t pmap(ipos_t({3,4,5}));
-	ipos_t x({0,0,0});
-	ipos_t y({2,3,4});
-	pmap.insert(x, 4);
-	pmap.insert(y, 5);
-	EXPECT_EQ(pmap[x], 4);
-	EXPECT_EQ(pmap[y], 5);
-};
-
-
-TEST(PointMap, slMapDoubling) {
-	pmap_t pmap(ipos_t({3,4,5}));
-	ipos_t x({0,0,0});
-	pmap.insert(x, 4);
-	EXPECT_EQ(pmap.insert(x, 5), false);
-};
-
-TEST(PointMap, slMapBadAccess) {
-	pmap_t pmap(ipos_t({3,4,5}));
-	EXPECT_THROW(pmap[ipos_t({-1,0,0})],std::out_of_range);
-	EXPECT_THROW(pmap[ipos_t({0,-5,0})],std::out_of_range);
-	EXPECT_THROW(pmap[ipos_t({0,0,-5})],std::out_of_range);
-	EXPECT_THROW(pmap[ipos_t({3,0,0})],std::out_of_range);
-	EXPECT_THROW(pmap[ipos_t({0,4,0})],std::out_of_range);
-	EXPECT_THROW(pmap[ipos_t({0,0,5})],std::out_of_range);
-};
-*/
-
 using namespace rational;
 
 typedef PeriodicPointLattice<Cell<0>> PeriodicPointLattice_std;
@@ -338,7 +305,7 @@ TEST_F(PyroPointsTest, ConstructPointCube){
 			imat33_t::from_cols({-1,1,1},{1,-1,1},{1,1,-1})
 			);
 	std::unordered_set<ipos_t> positions;
-	for (const auto& point : lat.get_points()){
+	for (const auto& point: lat.get_points()){
 		auto& R = point.position;
 		positions.insert(R);
 		EXPECT_EQ(&lat.get_point_at(R), &point);
@@ -353,12 +320,26 @@ TEST_F(PyroPointsTest, PointUniqueness){
 			imat33_t::from_cols({-1,2,3},{1,-4,5},{3,2,-1})
 			);
 	std::set<const Cell<0>*> unique_points;
-	for (const auto& p : lat.get_points()) {
-		auto res = unique_points.insert(&p);
+	for (const auto& [_, p] : lat.points){
+		auto res = unique_points.insert(p);
 		EXPECT_TRUE(res.second);
 	}
 }
 
+TEST_F(PyroPointsTest, PointRemoveWorks){
+
+	PeriodicPointLattice_std lat(cell, 
+			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
+			);
+	lat.erase_point(lat.points[0]);
+	lat.erase_point(lat.points[2]);
+
+	for (const auto& [i, p] : lat.points) {
+		EXPECT_FALSE(i==0);
+		EXPECT_FALSE(i==2);
+	}
+	lat.print_state(3);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -416,13 +397,33 @@ TEST_F(PyroLinksTest, LinkUniqueness){
 	}
 }
 
-/*
-TEST_F(PyroLinksTest, LinkHolonomySane){
+
+
+TEST_F(PyroLinksTest, LinkRemoveWorks){
 	PeriodicLinkLattice_std lat(cell, 
-			imat33_t::from_cols({3,0,0},{0,3,0},{0,0,3})
+			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
 			);
+	Cell<1>* old_link0 = lat.links[0];
+	Cell<1>* old_link2 = lat.links[2];
+
+	lat.erase_link(lat.links[0]);
+	lat.erase_link(lat.links[2]);
+
+	for (const auto& [i, p] : lat.links) {
+		EXPECT_NE(i,0);
+		EXPECT_NE(i,2);
+	}
+	// ensure links got cleaned up correctly
+	for (const auto& p : lat.get_points()){
+		for (const auto& [l, m] : p.coboundary){
+			EXPECT_NE(l, old_link0);
+			EXPECT_NE(l, old_link2);
+		}	
+	}
+
+	lat.print_state(3);
 }
-*/
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -469,10 +470,39 @@ TEST_F(PyroPlaqsTest, PlaqBoundaryClosed){
 			imat33_t::from_cols({3,0,0},{0,3,0},{0,0,3})
 			);
 	for (const auto& p : lat.get_plaqs()){
-		std::cout<<"Plaquette " << p.position <<" ";
-		std::cout<<"Boundary = "<<p.boundary<<"\n";
+		// std::cout<<"Plaquette " << p.position <<" ";
+		// std::cout<<"Boundary = "<<p.boundary<<"\n";
+		EXPECT_FALSE(p.boundary == Chain<1>());
 		auto dB = d(p.boundary);
 		EXPECT_TRUE(dB== Chain<0>());
+	}
+}
+
+
+TEST_F(PyroPlaqsTest, PointCoboundaryClosed){
+	PeriodicPlaqLattice_std lat(cell, 
+			imat33_t::from_cols({3,0,0},{0,3,0},{0,0,3})
+			);
+	for (const auto& p : lat.get_points()){
+		// std::cout<<"Point " << p.position <<" ";
+		// std::cout<<"Coboundary = "<<p.coboundary<<"\n";
+		EXPECT_FALSE(p.coboundary == Chain<1>());
+		auto DB = co_d(p.coboundary);
+		EXPECT_TRUE(DB== Chain<2>());
+	}
+}
+
+
+TEST_F(PyroPlaqsTest, PlaqRemoveWorks){
+	PeriodicPlaqLattice_std lat(cell, 
+			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
+			);
+	lat.erase_plaq(lat.plaqs[0]);
+	lat.erase_plaq(lat.plaqs[2]);
+
+	for (const auto& [i, p] : lat.plaqs) {
+		EXPECT_FALSE(i==0);
+		EXPECT_FALSE(i==2);
 	}
 }
 
@@ -523,9 +553,38 @@ TEST_F(PyroVolTest, VolBoundaryClosed){
 			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
 			);
 	for (const auto& v : lat.get_vols()){
-		std::cout<<"Vol " << v.position <<" ";
-		std::cout<<"Boundary = "<<v.boundary<<"\n";
+		// std::cout<<"Vol " << v.position <<" ";
+		// std::cout<<"Boundary = "<<v.boundary<<"\n";
+		EXPECT_FALSE(v.boundary == Chain<2>());
 		auto dB = d(v.boundary);
 		EXPECT_TRUE(dB== Chain<1>());
+	}
+}
+
+
+TEST_F(PyroVolTest, LinkCoboundaryClosed){
+	PeriodicVolLattice_std lat(cell, 
+			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
+			);
+	for (const auto& l : lat.get_links()){
+		// std::cout<<"Vol " << v.position <<" ";
+		// std::cout<<"Boundary = "<<v.boundary<<"\n";
+		EXPECT_FALSE(l.coboundary == Chain<2>());
+		auto DB = co_d(l.coboundary);
+		EXPECT_TRUE(DB == Chain<3>());
+	}
+}
+
+
+TEST_F(PyroVolTest, VolRemoveWorks){
+	PeriodicVolLattice_std lat(cell, 
+			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
+			);
+	lat.erase_vol(lat.vols[0]);
+	lat.erase_vol(lat.vols[2]);
+
+	for (const auto& [i, p] : lat.vols) {
+		EXPECT_FALSE(i==0);
+		EXPECT_FALSE(i==2);
 	}
 }

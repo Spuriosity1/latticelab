@@ -36,13 +36,14 @@ inline void cleanup_chain(Chain<order>& c){
 }
 
 template<int order>
-inline Chain<order> operator+(const Chain<order> c1, const Chain<order> c2){
+inline Chain<order> operator+(const Chain<order>& c1, const Chain<order>& c2){
 	auto retval = c1;
-	for (const auto& cell : c2){
-		if(c1.find(cell) == c1.end()){
-			retval[cell] = c2[cell];
+	for (const auto& [cell, m] : c2){	
+		auto it = retval.find(cell);
+		if (it != retval.end()) {
+			it->second += m;
 		} else {
-			retval[cell] += c2[cell];
+			retval[cell] = m;
 		}
 	}
 	cleanup_chain(retval);
@@ -136,19 +137,22 @@ struct GeometricObject{
 // Boundary gives an [order-1]-chain
 // Coboundary gives an [order+1]-chain corresponding to all order+1
 // chains that this cell participates in
-template <int order>
+template <int order_>
 struct Cell : public GeometricObject {
+	static const int order = order_;
 	Chain<order - 1> boundary;
 	Chain<order + 1> coboundary;
 };
 
 template <>
 struct Cell<0> : public GeometricObject {
+	static const int order = 0;
 	Chain<1> coboundary;
 };
 
 template <>
 struct Cell<3> : public GeometricObject {
+	static const int order = 3;
 	Chain<2> boundary;
 };
 
@@ -192,11 +196,19 @@ struct VectorSignPair {
 template<int _order>
 struct CellSpecifier : public GeometricObject {
 	// Coordinates of the objects on the boundary relative to `position`.
-	static constexpr int order = _order;
+	static const int order = _order;
 	std::vector<VectorSignPair> boundary;
 };
 
 
 template <typename T, int order>
 concept CellLike = std::derived_from<T, Cell<order>>;
+
+
+template <typename T>
+concept CellOfAnyOrder = CellLike<T, 0> 
+	|| CellLike<T, 1> 
+	|| CellLike<T, 2> 
+	|| CellLike<T, 3>;
+
 

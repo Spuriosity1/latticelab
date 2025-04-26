@@ -277,8 +277,7 @@ void from_json(const nlohmann::json &j, mat33<T> &M){
 		for (size_t k=0; k<3; k++) {
 			j.at(i).at(k).get_to<T>(M(i,k));
 		}
-	}
-	
+	}	
 }
 
 /// CONVENIENT TYPEDEFS
@@ -310,6 +309,7 @@ inline V det(mat33<V> a){
 }
 
 };
+
 
 
 // HASHABILITY

@@ -18,7 +18,6 @@ project_benchmark_sources = []
 project_inc = ['include']
 project_lib = []
 
-add_global_arguments('-DDEBUG', language : 'cpp')
 
 
 # build dependencies

@@ -10,19 +10,6 @@ import itertools
 
 actors = []
 
-def gen_unitcell(data):
-    A = np.array(data['index_cell_vectors'])
-    aLinv = np.array(data['primitive_cell_vectors'])
-
-    actors = []
-    for f in get_faces(A):
-        actors.append()
-        ax.plot(*np.array(f, dtype=np.float64).T, color='k')
-
-    for f in get_faces(aLinv):
-        ax.plot(*np.array(f, dtype=np.float64).T, color='green')
-
-
 def get_faces(M):
     faces = []
 

@@ -68,10 +68,15 @@ if get_option('enable-tests')
 endif
 
 
-# make porject available
+# make project available
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(libraries : lattice_indexing_lib,
                  version : '1.0',
                  name : 'liblatindex',
                  description : 'A library for indexing r-chains')
 
+
+latlib_dep = declare_dependency(
+  link_with : lattice_indexing_lib,
+  include_directories : g_include
+)

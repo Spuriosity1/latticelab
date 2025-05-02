@@ -1,0 +1,12 @@
+install_headers(  
+'UnitCellSpecifier.hpp',
+'argparse/argparse.hpp',
+'basic_parser.hh',
+'cell_geometry.hpp',
+'chain.hpp',
+'lattice_IO.hpp',
+'modulus.hpp',
+'preset_cellspecs.hpp',
+'rationalmath.hpp',
+'vec3.hpp'
+)

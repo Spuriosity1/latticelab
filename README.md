@@ -9,6 +9,19 @@ This project aims to provide a **single, universal** solution to this problem,
 defining a flexible, templated class `Lattice` which handles all the
 geometric pain for you.
 
+# INSTALLING
+
+```bash
+git clone https://github.com/Spuriosity1/latticelab.git && cd latticelab
+meson setup build 
+ninja -C build install
+```
+
+If you can't touch `/usr/local`, instead do
+```bash
+meson setup build -Dprefix="/your/install/prefix..."
+```
+
 # Philosophy
 
 The `UnitCellSpecifier` is essentially a plan for how to build a regular lattice.

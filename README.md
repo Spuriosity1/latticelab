@@ -1,4 +1,4 @@
-# LatticeLab (working title)
+# Latlib
 
 Any condensed matter physicist will be familiar with the pain of setting up 
 and using an indexing scheme for points on a lattice. This becomes even more

@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <memory>
 #include <ranges>
+#include <unordered_map>
 #include <vector>
 #include <cstdlib>
 #include <smithNormalForm.hpp>
@@ -29,6 +30,151 @@ namespace CellGeometry {
 
 typedef ivec3_t idx3_t;
 
+template<class Key, class Tp>
+using SparseMap = std::unordered_map<Key, Tp>;
+/*
+template <std::integral Key, typename T>
+class SparseMap {
+public:
+    // Insert or assign value at key
+    void insert(Key key, const T& value) {
+        if (key >= data.size())
+            data.resize(key + 1);
+        data[key] = value;
+    }
+
+    // Erase key if it exists
+    void erase(Key key) {
+        if (key < data.size())
+            data[key].reset();
+    }
+
+    // Check if key exists
+    bool contains(Key key) const {
+        return key < data.size() && data[key].has_value();
+    }
+
+    // Access value (throws if not found)
+    const T& at(Key key) const {
+        if (!contains(key))
+            throw std::out_of_range("Key not found");
+        return *data[key];
+    }
+
+    T& at(Key key) {
+        if (!contains(key))
+            throw std::out_of_range("Key not found");
+        return *data[key];
+    }
+
+    T& operator[](Key key) {
+        if (key >= data.size())
+            data.resize(key + 1);
+        if (!data[key])
+            data[key] = T{};
+        return *data[key];
+    }
+
+        // ---------------- Iterator support ----------------
+        //
+
+    class iterator {
+    public:
+        using value_type = std::pair<Key, T&>;
+        using reference = value_type;
+        using iterator_category = std::forward_iterator_tag;
+
+        iterator(size_t index, std::vector<std::optional<T>>& data)
+            : index(index), data(&data) {
+            advance_to_valid();
+        }
+
+        reference operator*() {
+            return {static_cast<Key>(index), *(*data)[index]};
+        }
+
+        iterator& operator++() {
+            ++index;
+            advance_to_valid();
+            return *this;
+        }
+
+        bool operator!=(const iterator& other) const {
+            return index != other.index;
+        }
+
+    private:
+        size_t index;
+        std::vector<std::optional<T>>* data;
+
+        void advance_to_valid() {
+            while (index < data->size() && !(*data)[index].has_value()) {
+                ++index;
+            }
+        }
+    };
+
+    class const_iterator {
+    public:
+        using value_type = std::pair<Key, const T&>;
+        using reference = value_type;
+        using iterator_category = std::forward_iterator_tag;
+
+        using difference_type = std::ptrdiff_t;
+        using pointer = void;
+
+        const_iterator(size_t index, const std::vector<std::optional<T>>& data)
+            : index(index), data(&data) {
+            advance_to_valid();
+        }
+
+        reference operator*() const {
+            return {static_cast<Key>(index), *(*data)[index]};
+        }
+
+        const_iterator& operator++() {
+            ++index;
+            advance_to_valid();
+            return *this;
+        }
+
+        bool operator!=(const const_iterator& other) const {
+            return index != other.index;
+        }
+
+    private:
+        size_t index;
+        const std::vector<std::optional<T>>* data;
+
+        void advance_to_valid() {
+            while (index < data->size() && !(*data)[index].has_value()) {
+                ++index;
+            }
+        }
+    };
+
+    iterator begin() { return iterator(0, data); }
+    iterator end()   { return iterator(data.size(), data); }
+
+    const_iterator begin() const { return const_iterator(0, data); }
+    const_iterator end()   const { return const_iterator(data.size(), data); }
+
+
+    
+    friend auto begin(SparseMap& map) { return map.begin(); }
+    friend auto end(SparseMap& map)   { return map.end(); }
+
+    friend auto begin(const SparseMap& map) { return map.begin(); }
+    friend auto end(const SparseMap& map)   { return map.end(); }
+
+
+private:
+    std::vector<std::optional<T>> data;
+};
+
+static_assert(std::ranges::range<SparseMap<int, Cell<1>*>>);
+static_assert(std::ranges::viewable_range<const SparseMap<int, Cell<1>*>>);
+*/
 
 // Does the main part of the 3d indexing work
 // Represents a periodic region of space with nothing filling it
@@ -257,9 +403,9 @@ struct PeriodicPointLattice : public PeriodicAbstractLattice {
     } 
 
 	// Contains the 'point' geometric objects
-	std::map<sl_t, Point*> points;
-
+	SparseMap<sl_t, Point*> points;
 private:
+
 	inline sl_t get_point_idx_at(const ipos_t& R){	
 		ipos_t r(R);
 		const idx3_t& I = get_supercell_IDX(r); // r now contains the sublattice index
@@ -364,7 +510,7 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
              | std::views::transform([](Link* p) -> Link const& { return *p; });
     } 
 
-	std::map<sl_t, Link*> links;
+	SparseMap<sl_t, Link*> links;
 
 	void print_state(unsigned verbosity=3){
 		PeriodicPointLattice<Point>::print_state(verbosity);
@@ -521,7 +667,7 @@ struct PeriodicPlaqLattice : public PeriodicLinkLattice<Point,Link>
              | std::views::transform([](Plaq* p) -> Plaq const& { return *p; });
     } 
 
-	std::map<sl_t, Plaq*> plaqs;
+	SparseMap<sl_t, Plaq*> plaqs;
 
 
 	void print_state(unsigned verbosity =3){
@@ -686,7 +832,7 @@ struct PeriodicVolLattice : public PeriodicPlaqLattice<Point,Link,Plaq>
              | std::views::transform([](Vol* p) -> Vol const& { return *p; });
     } 
 
-	std::map<sl_t, Vol*> vols;
+	SparseMap<sl_t, Vol*> vols;
 
 
 	void print_state(unsigned verbosity=3){

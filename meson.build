@@ -1,12 +1,13 @@
 project('lattice_lib', ['cpp', 'c'],
   version: '1.0.0',
   meson_version : '>= 1.5.0',
-  default_options : [ 'warning_level=3', 'buildtype=debug', 'cpp_std=c++2a' ]
+  default_options : [ 'warning_level=3', 'buildtype=release', 'cpp_std=c++2a' ]
 )
 
 project_description = 'Indexing library for lattices'
 
 cmake = import('cmake')
+
 
 # (global) variables tracking sources and libraries
 library_path = []
@@ -37,6 +38,8 @@ highfive_dep = HighFive_subproj.dependency('HighFive')
 # import the #define directives
 cpp_proj_arguments = snf_project.get_variable('cpp_proj_arguments')
 add_project_arguments(cpp_proj_arguments, language : 'cpp')
+
+add_project_arguments('-fconcepts-diagnostics-depth=2', language : 'cpp')
 
 
 main_deps = [

@@ -9,7 +9,7 @@ This project aims to provide a **single, universal** solution to this problem,
 defining a flexible, templated class `Lattice` which handles all the
 geometric pain for you.
 
-# INSTALLING
+# Installing
 
 ```bash
 git clone https://github.com/Spuriosity1/latticelab.git && cd latticelab
@@ -22,12 +22,41 @@ If you can't touch `/usr/local`, instead do
 meson setup build -Dprefix="/your/install/prefix..."
 ```
 
-# Philosophy
-
-The `UnitCellSpecifier` is essentially a plan for how to build a regular lattice.
-
 
 # Usage Examples
+
+```c++
+#include "cell_geometry.hpp"
+#include "lattice_IO.hpp"
+#include "preset_cellspecs.hpp"
+#include <UnitCellSpecifier.hpp>
+
+struct Point : public Cell<0> {
+};
+
+struct Link : public Cell<1> {
+    bool visited = false;
+};
+
+struct Plaq : public Cell<2> {
+};
+
+struct Vol : public Cell<3> {
+    bool visited = false;
+};
+
+typedef PeriodicVolLattice<Point, Link, Plaq, Vol> Lattice;
+
+int main(){
+    const auto spec = PrimitiveSpecifiers::DiamondSpec(); // primitive diamond unit cell
+	
+    imat33_t supercell_spec = {{-2,2,2},{2,-2,2},{2,2,-2}}; 
+    Lattice lat(spec, supercell_spec);
+
+}
+
+```
+
 
 ## Basic Geometry
 

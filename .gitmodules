@@ -1,6 +1,3 @@
 [submodule "subprojects/smith_normal_form"]
 	path = subprojects/smith_normal_form
 	url = https://github.com/Spuriosity1/smith_normal_form
-[submodule "subprojects/HighFive"]
-	path = subprojects/HighFive
-	url = https://github.com/BlueBrain/HighFive

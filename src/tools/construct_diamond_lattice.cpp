@@ -222,7 +222,7 @@ int main (int argc, const char *argv[]) {
 
     std::cout<<"Constructing supercell of dimensions \n"<<supercell_spec<<std::endl;
 
-    const PrimitiveSpecifers::Diamond spec;
+    const auto spec = PrimitiveSpecifiers::DiamondSpec(); // primitive diamond unit cell
     auto name = hash_parameters(Z1_s, Z2_s, Z3_s);
 
     Lattice lat(spec, supercell_spec);

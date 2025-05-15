@@ -1,10 +1,13 @@
 #pragma once
 
 #include "UnitCellSpecifier.hpp"
-#include "rationalmath.hpp"
 
 namespace CellGeometry {
-namespace PrimitiveSpecifers {
+namespace PrimitiveSpecifiers {
+
+const UnitCellSpecifier DiamondSpec();
+const UnitCellSpecifier CubicSpec();
+
 
 struct Diamond : public UnitCellSpecifier {
 	Diamond() : UnitCellSpecifier(
@@ -22,8 +25,6 @@ private:
 	void setup_vols();
 };
 
-
-
 struct Cubic : public UnitCellSpecifier {
 	Cubic() : UnitCellSpecifier(
 		rational::rmat33::from_cols({2,0,0},{0,2,0},{0,0,2}) )
@@ -39,7 +40,6 @@ private:
 	void setup_plaqs();
 	void setup_vols();
 };
-
 
 };
 };

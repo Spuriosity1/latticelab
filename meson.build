@@ -1,5 +1,5 @@
 project('lattice_lib', ['cpp', 'c'],
-  version: '1.0.0',
+  version: '1.0.1',
   meson_version : '>= 1.5.0',
   default_options : [ 'warning_level=3', 'buildtype=release', 'cpp_std=c++2a' ]
 )
@@ -29,17 +29,15 @@ snf_dep = snf_project.get_variable('snf_dep')
 
 
 # Configure the CMake project
-HighFive_subproj = cmake.subproject('HighFive')
+# HighFive_subproj = cmake.subproject('HighFive')
 
 # Fetch the dependency object
-highfive_dep = HighFive_subproj.dependency('HighFive')
+# highfive_dep = HighFive_subproj.dependency('HighFive')
 
 
 # import the #define directives
 cpp_proj_arguments = snf_project.get_variable('cpp_proj_arguments')
 add_project_arguments(cpp_proj_arguments, language : 'cpp')
-
-add_project_arguments('-fconcepts-diagnostics-depth=2', language : 'cpp')
 
 
 main_deps = [
@@ -47,8 +45,7 @@ main_deps = [
   #  dependency('argparse', required: true),
   #  dependency('HDF5', required: true),
   dependency('nlohmann_json', required: true),
-  snf_dep,
-  highfive_dep
+  snf_dep
   ]
 
 

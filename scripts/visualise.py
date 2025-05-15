@@ -104,6 +104,11 @@ def plot_pos(x):
 
 def plot_points(data, args):
     point_data = data['points']
+
+    if point_data is None:
+        print("No points in latfile.")
+        return
+
     xyz = []
     for i, x in enumerate(point_data):
         xyz.append(x['pos'])
@@ -119,6 +124,11 @@ def plot_points(data, args):
 def plot_links(data, args):
     A = np.array(data['index_cell_vectors'])
     link_data = data['links']
+
+    if link_data is None:
+        print("No links in latfile.")
+        return
+
     for i, x in enumerate(link_data):
         if args.undirected:
             plot_undirected_link(x,A)
@@ -141,6 +151,10 @@ def find_link(linkpos, link_data):
 def plot_plaqs(data, args):
     link_data = data["links"]
     plaq_data = data["plaqs"]
+    
+    if plaq_data is None:
+        print("No plaquettes in latfile.")
+        return
     A = np.array(data['index_cell_vectors'])
 
     for i, x in enumerate(plaq_data):
@@ -169,6 +183,9 @@ def plot_plaqs(data, args):
 
 def plot_vols(data, args):
     vol_data = data['vols']
+    if vol_data is None:
+        print("No volumes in latfile.")
+        return
     xyz = []
     for i, x in enumerate(vol_data):
         xyz.append(x['pos'])

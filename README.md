@@ -1,13 +1,15 @@
 # Latlib
 
+[![Build and Test](https://github.com/Spuriosity1/latticelab/actions/workflows/main.yml/badge.svg)](https://github.com/Spuriosity1/latticelab/actions/workflows/main.yml)
+
 Any condensed matter physicist will be familiar with the pain of setting up 
-and using an indexing scheme for points on a lattice. This becomes even more
-complicated when one wishes to also consider more complicated geometrical
-objects - links, elementary plaquettes, and elementary cells.
+and using a good indexing scheme for points on a periodic lattice. It's tough to get boundary conditions right, and even tougher to consider *disorder* (i.e. deletions) in a way that doesn't feel, well, hacky.
+
+This becomes even more complicated when one wishes to also consider higher-dimensional geometrical objects than simple points, such as links, elementary plaquettes, and elementary cells.
 
 This project aims to provide a **single, universal** solution to this problem,
-defining a flexible, templated class `Lattice` which handles all the
-geometric pain for you.
+defining a flexible, templated class `Lattice` which allows the user to quickly and easily define general chain complexes in 3D (or lower).
+
 
 # Installing
 
@@ -127,8 +129,6 @@ Pros (+) and cons (-):
 ```c++
 
 
-// If you think I've lost it, you're correct. 
-// I have this kind of an interface in mind:
 /*
 struct spin: public Cell<1> {
 	double heis[3];

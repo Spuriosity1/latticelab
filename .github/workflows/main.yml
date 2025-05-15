@@ -1,0 +1,27 @@
+name: Build and Test
+on: [push]
+jobs:
+  functionality:
+    name: Functionality
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.10.14]
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Meson Build
+      uses: BSFishy/meson-build@v1.0.3
+      with:
+        action: build
+        meson-version: 1.5.0
+    - name: Meson Build
+      uses: BSFishy/meson-build@v1.0.3
+      with:
+        action: test
+        meson-version: 1.5.0

@@ -404,6 +404,7 @@ struct PeriodicPointLattice : public PeriodicAbstractLattice {
 
 	// Contains the 'point' geometric objects
 	SparseMap<sl_t, Point*> points;
+
 private:
 
 	inline sl_t get_point_idx_at(const ipos_t& R){	

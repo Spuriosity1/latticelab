@@ -8,5 +8,6 @@ install_headers(
 'modulus.hpp',
 'preset_cellspecs.hpp',
 'rationalmath.hpp',
-'vec3.hpp'
+'vec3.hpp',
+'SortedVectorMap.hpp'
 )

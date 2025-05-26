@@ -31,8 +31,8 @@ namespace CellGeometry {
 typedef ivec3_t idx3_t;
 
 template<class Key, class Tp>
-//using SparseMap = std::unordered_map<Key, Tp>;
-using SparseMap = SortedVectorMap<Key, Tp>;
+using SparseMap = std::unordered_map<Key, Tp>;
+//using SparseMap = SortedVectorMap<Key, Tp>;
 /*
 template <std::integral Key, typename T>
 class SparseMap {

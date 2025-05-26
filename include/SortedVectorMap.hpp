@@ -1,12 +1,27 @@
 #include <vector>
+#include <stdexcept>
 #include <algorithm>
 #include <iostream>
 #include <optional>
 
 template<typename Key, typename Value>
 class SortedVectorMap {
-public:
+
     using Pair = std::pair<Key, Value>;
+private:
+    std::vector<Pair> data;
+
+    // Binary search lower bound
+    typename std::vector<Pair>::iterator lower_bound(const Key& key) {
+        return std::lower_bound(data.begin(), data.end(), key,
+            [](const Pair& p, const Key& k) { return p.first < k; });
+    }
+
+    typename std::vector<Pair>::const_iterator lower_bound(const Key& key) const {
+        return std::lower_bound(data.begin(), data.end(), key,
+            [](const Pair& p, const Key& k) { return p.first < k; });
+    }
+public:
 
     // Insert or update
     void insert(const Key& key, const Value& value) {
@@ -27,6 +42,17 @@ public:
             it = data.insert(it, {key, Value{}});
             return it->second;
         }
+    }
+
+
+    Value& at(const Key& key) {
+        auto it = lower_bound(key);
+#ifndef NDEBUG
+		if (it == data.end()){
+			throw std::out_of_range("Key not in structure");
+		}
+#endif
+		return it->second; 
     }
 
     // Find (const)
@@ -73,18 +99,5 @@ public:
     auto cend() const { return data.cend(); }
 
 
-private:
-    std::vector<Pair> data;
-
-    // Binary search lower bound
-    typename std::vector<Pair>::iterator lower_bound(const Key& key) {
-        return std::lower_bound(data.begin(), data.end(), key,
-            [](const Pair& p, const Key& k) { return p.first < k; });
-    }
-
-    typename std::vector<Pair>::const_iterator lower_bound(const Key& key) const {
-        return std::lower_bound(data.begin(), data.end(), key,
-            [](const Pair& p, const Key& k) { return p.first < k; });
-    }
 };
 

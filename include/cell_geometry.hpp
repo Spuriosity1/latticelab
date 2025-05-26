@@ -3,7 +3,6 @@
 #include <concepts>
 #include <cstddef>
 #include <memory>
-#include <ranges>
 #include <unordered_map>
 #include <vector>
 #include <cstdlib>
@@ -14,6 +13,7 @@
 #include "rationalmath.hpp"
 #include "vec3.hpp"
 #include "UnitCellSpecifier.hpp"
+#include "SortedVectorMap.hpp"
 
 
  
@@ -31,7 +31,8 @@ namespace CellGeometry {
 typedef ivec3_t idx3_t;
 
 template<class Key, class Tp>
-using SparseMap = std::unordered_map<Key, Tp>;
+//using SparseMap = std::unordered_map<Key, Tp>;
+using SparseMap = SortedVectorMap<Key, Tp>;
 /*
 template <std::integral Key, typename T>
 class SparseMap {
@@ -357,7 +358,7 @@ struct PeriodicPointLattice : public PeriodicAbstractLattice {
 	// sl -> a sublattice index
 	//
 	inline Point& get_point_at(const ipos_t &R){
-		return *points.at(get_point_idx_at(R) );
+		return *points.at(get_point_idx_at(R));
 	}
 
 	// const accessors	

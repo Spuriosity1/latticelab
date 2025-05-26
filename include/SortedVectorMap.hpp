@@ -1,8 +1,10 @@
+#pragma once
 #include <vector>
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
 #include <optional>
+
 
 template<typename Key, typename Value>
 class SortedVectorMap {

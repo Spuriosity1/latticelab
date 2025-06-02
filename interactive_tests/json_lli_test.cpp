@@ -13,7 +13,7 @@ int main (int argc, char *argv[]) {
 		std::cout << "USAGE: "<<argv[0]<<" v1 v2 v3\n";
 	}
 
-	vec3<long long int> v;
+	vec3<int64_t> v;
 
 
 	for (int i=0; i<3; i++){

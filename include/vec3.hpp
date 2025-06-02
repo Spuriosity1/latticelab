@@ -146,9 +146,12 @@ vec3<T> operator-(const vec3<T>& v1, const vec3<T>& v2){
 template <typename T>
 struct mat33 {
 	static constexpr size_t size(){ return 9; }
-	static constexpr mat33 from_cols(std::array<T,3> a0,
-			std::array<T,3> a1,
-			std::array<T,3> a2
+	
+	template<typename S=T>
+	requires std::convertible_to<S, T>
+	static constexpr mat33 from_cols(std::array<S,3> a0,
+			std::array<S,3> a1,
+			std::array<S,3> a2
 			){
 		mat33 out;
 		for (int row=0; row<3; row++){
@@ -158,10 +161,12 @@ struct mat33 {
 		}
 		return out;
 	}
-
-	static constexpr mat33 from_rows(std::array<T, 3> r0,
-			std::array<T, 3> r1,
-			std::array<T, 3> r2){
+	
+	template <typename S=T>
+	requires std::convertible_to<S, T>
+	static constexpr mat33 from_rows(std::array<S, 3> r0,
+			std::array<S, 3> r1,
+			std::array<S, 3> r2){
 		mat33 out;
 
 		for (int col=0; col<3; col++){

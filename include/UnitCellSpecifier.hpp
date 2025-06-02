@@ -16,7 +16,7 @@ namespace CellGeometry {
 /////////////////////////////////////////////
 
 
-typedef SmithNormalFormCalculator::Matrix<long long int> snfmat;
+typedef SmithNormalFormCalculator::Matrix<int64_t> snfmat;
 
 typedef  CellSpecifier<0> PointSpec ;
 typedef  CellSpecifier<1> LinkSpec  ;
@@ -53,7 +53,7 @@ inline SmithNormalFormCalculator::Matrix<T> to_snfmat(vector3::mat33<T>m){
 
 struct SNF_decomp {
 	SNF_decomp(
-			SmithNormalFormCalculator::SmithNormalFormDecomposition<long long int>decomp ) : 
+			SmithNormalFormCalculator::SmithNormalFormDecomposition<int64_t>decomp ) : 
 		L(from_snfmat(decomp.L)),
 		Linv(from_snfmat(SmithNormalFormCalculator::inverse(decomp.L))),
 		D(from_snfmat(decomp.D).diagonal()),

@@ -1,5 +1,4 @@
 #include "preset_cellspecs.hpp"
-#include "rationalmath.hpp"
 
 
 namespace CellGeometry {

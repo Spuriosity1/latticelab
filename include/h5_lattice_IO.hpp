@@ -23,9 +23,9 @@ namespace CellGeometry {
 		auto g = file.createGroup("/geometry");
 		g.createAttribute<std::vector<int>>("version",{1,0});
 
-		auto dset = file.createDataSet<long long int>(
+		auto dset = file.createDataSet<int64_t>(
 				"/geometry/cell_vectors", HighFive::DataSpace(3,3));
-		long long int data[3][3];
+		int64_t data[3][3];
 		for (int i=0; i<3; i++){ for (int j=0; j<3; j++) {
 			data[i][j] = lat.cell_vectors(i,j);
 		}}
@@ -37,11 +37,11 @@ namespace CellGeometry {
 		write_data(static_cast<const PeriodicAbstractLattice&>(lat), file);
 
 		size_t num_points = lat.points.size();
-		auto loc_dset = file.createDataSet<long long int>(
+		auto loc_dset = file.createDataSet<int64_t>(
 				"/geometry/point_loc", HighFive::DataSpace(num_points,3)
 				);
 
-		auto data = new long long int[num_points][3];
+		auto data = new int64_t[num_points][3];
 		for (size_t row=0; row<num_points; row++) {
 			for (size_t j=0; j<3; j++) {
 				data[row][j] = lat.points[row].position[j];
@@ -60,7 +60,7 @@ template<
 
 		size_t num_links = lat.links.size();
 
-		auto loc_dset = file.createDataSet<long long int>(
+		auto loc_dset = file.createDataSet<int64_t>(
 				"/geometry/link_loc", HighFive::DataSpace(num_links,3)
 				);
 		
@@ -69,13 +69,13 @@ template<
 			max_boundary_size = max(l.boundary.size(), max_boundary_size);
 		}
 
-		auto boundary_dset = file.createDataSet<long long int>(
+		auto boundary_dset = file.createDataSet<int64_t>(
 				"/geometry/link_boundary", HighFive::DataSpace(num_links,2,3)
 				);
 
 
-		auto data = new long long int[num_links][3];
-		auto boundary = new long long int[num_links][3];
+		auto data = new int64_t[num_links][3];
+		auto boundary = new int64_t[num_links][3];
 		for (size_t row=0; row<num_links; row++) {
 			auto l = lat.links[row];
 			for (int j=0; j<3; j++) {

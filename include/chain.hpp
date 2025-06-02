@@ -4,10 +4,10 @@
 #include "vec3.hpp" 
 #include "SortedVectorMap.hpp"
 
-// typedef vector3::vec3<rational::Rational> ipos_t;
-typedef vector3::vec3<long long int> ipos_t;
-typedef vector3::vec3<long long int> ivec3_t;
-typedef vector3::mat33<long long int> imat33_t;
+
+typedef vector3::vec3<int64_t> ipos_t;
+typedef vector3::vec3<int64_t> ivec3_t;
+typedef vector3::mat33<int64_t> imat33_t;
 typedef unsigned int idx_t;
 
 template <int order>

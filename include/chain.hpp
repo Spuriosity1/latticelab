@@ -1,18 +1,11 @@
 #pragma once
 #include <ios>
-#include <map>
 #include <vector>
-#include <concepts>
-/*
-#include <armadillo>
-typedef arma::ivec3 ipos_t;
-typedef arma::imat33 imat33_t;
-*/
 #include "vec3.hpp" 
-#include "rationalmath.hpp"
 #include "SortedVectorMap.hpp"
 
-typedef vector3::vec3<rational::Rational> ipos_t;
+// typedef vector3::vec3<rational::Rational> ipos_t;
+typedef vector3::vec3<long long int> ipos_t;
 typedef vector3::vec3<long long int> ivec3_t;
 typedef vector3::mat33<long long int> imat33_t;
 typedef unsigned int idx_t;

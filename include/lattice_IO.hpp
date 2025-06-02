@@ -29,7 +29,7 @@ namespace CellGeometry {
 	inline void write_data(const PeriodicAbstractLattice& lat, nlohmann::json& j){
 		j["cell_vectors"] = lat.cell_vectors;
 		j["index_cell_vectors"] = lat.index_cell_vectors;
-		j["primitive_cell_vectors"] = lat.primitive_spec.lattice_vectors;
+		j["primitive_cell_vectors"] = lat.primitive_spec.latvecs;
 	}
 
 	template<int order>

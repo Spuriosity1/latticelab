@@ -4,7 +4,7 @@
 #include "chain.hpp"
 #include "matrix.hpp"
 #include "smithNormalForm.hpp"
-#include "rationalmath.hpp"
+// #include "rationalmath.hpp"
 
 namespace CellGeometry {
 
@@ -69,7 +69,7 @@ struct SNF_decomp {
 };
 
 struct UnitCellSpecifier {	
-	UnitCellSpecifier(const rational::rmat33& lattice_vectors_);
+	UnitCellSpecifier(const imat33_t& lattice_vectors_);
 	/**
 	 * Creates a new unitcell from the points of the old one, with
 	 * new primitive_vectors such that
@@ -83,8 +83,9 @@ struct UnitCellSpecifier {
 
 	// The lattice vectors (columns are interpreted as vectors)
 	// [ a1  a2  a3]
-	const rational::rmat33 lattice_vectors;
-	const rational::rmat33 lattice_vectors_inverse; 
+	const imat33_t latvecs;
+	const imat33_t latvecs_unnormed_inverse;
+	const int64_t abs_det_latvecs; // determinant of the lattice vectors
 	// Smith decomposition of lattice_vectors
 	//const SNF_decomp UPV;
 
@@ -96,7 +97,7 @@ struct UnitCellSpecifier {
 	void add_vol(const VolSpec& v);
 
 	// Wraps the vector X in-place to within this unit cell, i.e. such that
-	// lattice_vectors_inverse * X in [0,1)^3
+	// unnormed_inverse_latvecs * X in [0,abs_det_latvecs)^3
 	void wrap(ipos_t& X) const;
 	void wrap(GeometricObject& X) const;
 	ipos_t wrap_copy(const ipos_t& X) const {
@@ -139,16 +140,16 @@ protected:
 	std::vector<PlaqSpec> plaqs;
 	std::vector<VolSpec> vols;
 
-	bool is_valid_position(const ipos_t& R){
-		return (R[0].denom != 0) && (R[1].denom != 0) && (R[2].denom != 0);
-	}
+//	bool is_valid_position(const ipos_t& R){
+//		return (R[0].denom != 0) && (R[1].denom != 0) && (R[2].denom != 0);
+//	}
 
 private:
-	void assert_valid_position(const ipos_t& R){
-		if ( !is_valid_position(R) ) {
-			throw std::invalid_argument("spec has invalid location");
-		}
-	}
+//	void assert_valid_position(const ipos_t& R){
+//		if ( !is_valid_position(R) ) {
+//			throw std::invalid_argument("spec has invalid location");
+//		}
+//	}
 
 
 	/*

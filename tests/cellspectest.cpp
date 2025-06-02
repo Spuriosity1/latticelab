@@ -12,7 +12,6 @@
 #endif
 
 using namespace CellGeometry;
-using namespace rational;
 
 typedef PeriodicPointLattice<Cell<0>> PeriodicPointLattice_std;
 typedef PeriodicLinkLattice<Cell<0>,Cell<1>> PeriodicLinkLattice_std;
@@ -22,7 +21,7 @@ typedef PeriodicVolLattice<Cell<0>,Cell<1>,Cell<2>,Cell<3>> PeriodicVolLattice_s
 class CubicPointsTest : public testing::Test {
 	protected:
 		CubicPointsTest()
-			: cell(rmat33::from_cols({2, 0, 0}, {0, 2, 0}, {0, 0, 2})) {
+			: cell(imat33_t::from_cols({2, 0, 0}, {0, 2, 0}, {0, 0, 2})) {
 				PointSpec pointspec;
 				pointspec.position = {0, 0, 0};
 				cell.add_point(pointspec);
@@ -133,7 +132,7 @@ TEST_F(CubicVolTest, AddVolWorks) {
 class PyroPointsTest : public testing::Test {
 	protected:
 		PyroPointsTest()
-			: cell(rmat33::from_cols({0,4,4},	{4,0,4},{4,4,0})) {			
+			: cell(imat33_t::from_cols({0,4,4},	{4,0,4},{4,4,0})) {			
 				PointSpec pointspec;
 				for (const auto& x : point_positions){
 					pointspec.position = x;
@@ -338,7 +337,6 @@ TEST_F(PyroPointsTest, PointRemoveWorks){
 		EXPECT_FALSE(i==0);
 		EXPECT_FALSE(i==2);
 	}
-	lat.print_state(3);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -356,6 +354,22 @@ TEST_F(PyroPointsTest, PointRemoveWorks){
 TEST_F(PyroLinksTest, ConstructLinkPrim){
 	PeriodicLinkLattice_std lat(cell, 
 			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
+			);
+	std::unordered_set<ipos_t> positions;
+	for (const auto [_, l] :lat.links){
+		const auto R = l->position;
+		positions.insert(R);
+		EXPECT_EQ(&lat.get_link_at(R), l);
+		EXPECT_EQ(&lat.get_link_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
+				l);
+	}
+	ASSERT_EQ(positions.size(), lat.links.size());
+}
+
+
+TEST_F(PyroLinksTest, ConstructLinkBigprim){
+	PeriodicLinkLattice_std lat(cell, 
+			imat33_t::from_cols({3,0,0},{0,3,0},{0,0,3})
 			);
 	std::unordered_set<ipos_t> positions;
 	for (const auto [_, l] :lat.links){

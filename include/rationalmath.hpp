@@ -84,6 +84,8 @@ typedef vector3::vec3<Rational> rvec3;
 typedef vector3::mat33<Rational> rmat33;
 
 
+
+
 //TODO template this BS
 void rswap(rmat33& A, int row_i, int row_j, rvec3& b);
 

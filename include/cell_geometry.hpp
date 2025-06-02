@@ -1,6 +1,5 @@
 #pragma once 
 
-#include <concepts>
 #include <cstddef>
 #include <memory>
 #include <unordered_map>
@@ -10,7 +9,7 @@
 #include <cassert>
 
 #include "chain.hpp"
-#include "rationalmath.hpp"
+#include "modulus.hpp"
 #include "vec3.hpp"
 #include "UnitCellSpecifier.hpp"
 #include "SortedVectorMap.hpp"
@@ -46,11 +45,11 @@ struct PeriodicAbstractLattice {
 	// nicely with the supercell
 	LDW(ComputeSmithNormalForm( to_snfmat(supercell))),
 	// Store the reparameterised supercell
-	cell_vectors(specified_primitive.lattice_vectors 
-			* rational::rmat33::from_other(supercell)),
+	cell_vectors(specified_primitive.latvecs 
+			* imat33_t::from_other(supercell)),
 	// Cell vectors only used for indexing
-	index_cell_vectors(specified_primitive.lattice_vectors 
-			* rational::rmat33::from_other(supercell * LDW.R)),
+	index_cell_vectors(specified_primitive.latvecs 
+			* imat33_t::from_other(supercell * LDW.R)),
 	num_primitive(LDW.D[0]*LDW.D[1]*LDW.D[2]),
 	// Store the new primitve cell
 	primitive_spec( specified_primitive,  LDW.Linv )
@@ -84,8 +83,8 @@ public:
 	// a0 b0 c0
 	// a1 b1 c1
 	// a2 b2 c2
-	const rational::rmat33 cell_vectors; // = specified primitive * supercell
-	const rational::rmat33 index_cell_vectors;
+	const imat33_t cell_vectors; // = specified primitive * supercell
+	const imat33_t index_cell_vectors;
 
 	// The number of primitive cells
 	const int num_primitive;
@@ -139,16 +138,17 @@ public:
 */
 inline idx3_t PeriodicAbstractLattice::get_supercell_IDX(ipos_t& R) {
 	// b^-1 R  = I + D N + b^-1 r
-	rational::rvec3 x = this->primitive_spec.lattice_vectors_inverse * R;
+	ipos_t x = this->primitive_spec.latvecs_unnormed_inverse * R;
 	idx3_t I;
 	for (int n=0; n<3; n++){
-		x[n].simplify();
-		I[n] = rational::make_proper(x[n]);
+		auto res = moddiv(x[n], primitive_spec.abs_det_latvecs);
+		x[n] = res.rem;
+		I[n] = res.quot;
 		I[n] = mod(I[n], LDW.D[n]);
 	}
-	R = this->primitive_spec.lattice_vectors * x;
+	R = this->primitive_spec.latvecs * x;
 	for (int n=0; n<3; n++){
-		R[n].simplify();
+		R[n] /= primitive_spec.abs_det_latvecs;
 	}
 	return I;
 }
@@ -284,7 +284,7 @@ private:
 			for (sl_t sl=0; sl< this->primitive_spec.num_point_sl(); sl++){
 				const PointSpec& spec = primitive_spec.point_no(sl);
 				Point* tmp = new Point();
-				tmp->position = spec.position + primitive_spec.lattice_vectors * IDX;
+				tmp->position = spec.position + primitive_spec.latvecs * IDX;
 				points[get_point_idx_at(tmp->position)] = tmp;
 			}
 		}}}	
@@ -395,7 +395,7 @@ private:
 			for (sl_t sl=0; sl<this->primitive_spec.num_link_sl(); sl++){
 				const LinkSpec& spec = this->primitive_spec.link_no(sl);
 				auto tmp = new Link();
-				tmp->position = spec.position + this->primitive_spec.lattice_vectors * IDX;
+				tmp->position = spec.position + this->primitive_spec.latvecs * IDX;
 				links[get_link_idx_at(tmp->position)] = tmp;
 			}
 		}}}
@@ -539,7 +539,7 @@ private:
 			for (sl_t sl=0; sl<this->primitive_spec.num_plaq_sl(); sl++){
 				const PlaqSpec& spec = this->primitive_spec.plaq_no(sl);
 				auto tmp = new Plaq();
-				tmp->position = spec.position + this->primitive_spec.lattice_vectors * IDX;
+				tmp->position = spec.position + this->primitive_spec.latvecs * IDX;
 				plaqs[get_plaq_idx_at(tmp->position)] = tmp;
 			}
 		}}}
@@ -691,7 +691,7 @@ private:
 			for (sl_t sl=0; sl<this->primitive_spec.num_vol_sl(); sl++){
 				const VolSpec& spec = this->primitive_spec.vol_no(sl);
 				auto tmp = new Vol();
-				tmp->position = spec.position + this->primitive_spec.lattice_vectors * IDX;
+				tmp->position = spec.position + this->primitive_spec.latvecs * IDX;
 				vols[get_vol_idx_at(tmp->position)] = tmp;
 			} 
 		}}}

@@ -146,7 +146,7 @@ vec3<T> operator-(const vec3<T>& v1, const vec3<T>& v2){
 template <typename T>
 struct mat33 {
 	static constexpr size_t size(){ return 9; }
-	static mat33 from_cols(std::array<T,3> a0,
+	static constexpr mat33 from_cols(std::array<T,3> a0,
 			std::array<T,3> a1,
 			std::array<T,3> a2
 			){
@@ -159,7 +159,7 @@ struct mat33 {
 		return out;
 	}
 
-	static mat33 from_rows(std::array<T, 3> r0,
+	static constexpr mat33 from_rows(std::array<T, 3> r0,
 			std::array<T, 3> r1,
 			std::array<T, 3> r2){
 		mat33 out;
@@ -174,7 +174,7 @@ struct mat33 {
 	
 	template <typename S>
 	requires std::convertible_to<S, T>
-	static mat33 from_other(mat33<S> other){
+	static constexpr mat33 from_other(mat33<S> other){
 		mat33 retval;
 		for (int i=0; i<9; i++){
 			retval[i] = static_cast<T>(other[i]);
@@ -190,11 +190,11 @@ struct mat33 {
 		return res;
 	}
 
-	inline T& operator()(int i, int j){return m_x[3*i + j];	}
-	inline T  operator()(int i, int j) const {return m_x[3*i + j];	}
+	inline constexpr T& operator()(int i, int j){return m_x[3*i + j];	}
+	inline constexpr T  operator()(int i, int j) const {return m_x[3*i + j];	}
 
-	inline T& operator[](int i)		  {return m_x[i];}
-	inline T  operator[](int i) const {return m_x[i];}
+	inline constexpr T& operator[](int i)		  {return m_x[i];}
+	inline constexpr T  operator[](int i) const {return m_x[i];}
 
 	mat33<T> operator*(const mat33<T>& x) const {
 		mat33<T> res;
@@ -302,7 +302,7 @@ std::ostream& operator<<(std::ostream& os, mat33<T> m){
 
 // Explicit functions preserving intness
 template<typename V>
-inline V det(mat33<V> a){
+inline constexpr V det(mat33<V> a){
     return (a(0,0) * (a(1,1) * a(2,2) - a(2,1) * a(1,2))
            -a(1,0) * (a(0,1) * a(2,2) - a(2,1) * a(0,2))
            +a(2,0) * (a(0,1) * a(1,2) - a(1,1) * a(0,2)));

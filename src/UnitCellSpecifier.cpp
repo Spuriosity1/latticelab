@@ -1,7 +1,6 @@
 #include "UnitCellSpecifier.hpp"
 #include "chain.hpp"
 #include "modulus.hpp"
-#include "rationalmath.hpp"
 #include <sstream>
 #include <stdexcept>
 
@@ -12,7 +11,6 @@
 #define ASSERT_VALID_POS(R);
 #endif
 
-using namespace rational;
 
 namespace CellGeometry {
 
@@ -85,11 +83,33 @@ void throw_bad_boundary(CellSpecifier<_order> p, ipos_t missing_point) {
 	throw std::out_of_range(s.str());
 }
 
+
+// Computes the closed-form, simplified matrix inverse
+constexpr imat33_t unnormed_inverse(const imat33_t& A){
+	std::array<int64_t, 3> b0 = {-A(1, 2) * A(2, 1) + A(1, 1) * A(2, 2),
+		A(0, 2) * A(2, 1) - A(0, 1) * A(2, 2),
+		-A(0, 2) * A(1, 1) + A(0, 1) * A(1, 2)};
+	std::array<int64_t, 3> b1 = {A(1, 2) * A(2, 0) - A(1, 0) * A(2, 2),
+		-A(0, 2) * A(2, 0) + A(0, 0) * A(2, 2),
+		A(0, 2) * A(1, 0) - A(0, 0) * A(1, 2)};
+	std::array<int64_t, 3> b2 = {-A(1, 1) * A(2, 0) + A(1, 0) * A(2, 1),
+		A(0, 1) * A(2, 0) - A(0, 0) * A(2, 1),
+		-A(0, 1) * A(1, 0) + A(0, 0) * A(1, 1)};
+	return imat33_t::from_rows(b0,b1,b2);
+}
+
+
+constexpr imat33_t make_positive(const imat33_t& mat){
+	if (det(mat) < 0) { return -1*mat; }
+	return mat;
+}
+
 // constructors
 //
-UnitCellSpecifier::UnitCellSpecifier(const rmat33& lattice_vectors_) :
-	lattice_vectors(lattice_vectors_),
-	lattice_vectors_inverse( inv(lattice_vectors) )
+UnitCellSpecifier::UnitCellSpecifier(const imat33_t& lattice_vectors_) :
+	latvecs(make_positive(lattice_vectors_)),
+	latvecs_unnormed_inverse( unnormed_inverse(latvecs) ),
+	abs_det_latvecs(det(latvecs))
 	//UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
 //	point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {}
@@ -97,8 +117,9 @@ UnitCellSpecifier::UnitCellSpecifier(const rmat33& lattice_vectors_) :
 UnitCellSpecifier::UnitCellSpecifier(
 		const UnitCellSpecifier& other,
 		const imat33_t& cellspec) : 
-	lattice_vectors(other.lattice_vectors * rmat33::from_other(cellspec)),
-	lattice_vectors_inverse( inv(lattice_vectors) )
+	latvecs(make_positive(other.latvecs * imat33_t::from_other(cellspec))),
+	latvecs_unnormed_inverse( unnormed_inverse(latvecs) ),
+	abs_det_latvecs(det(latvecs))
 	// UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
 	// point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {
@@ -114,14 +135,14 @@ UnitCellSpecifier::UnitCellSpecifier(
 }
 
 void UnitCellSpecifier::wrap(ipos_t& X) const {
-	rvec3 x = lattice_vectors_inverse * X;
+	ipos_t x = latvecs_unnormed_inverse * X; // this / det(A) is the true x
 	for (int i=0; i<3; i++){
-		x[i].simplify();
-		make_proper(x[i]);
+		x[i] = mod(x[i], abs_det_latvecs);
 	}
-	X = lattice_vectors*x;
+	X = latvecs*x;
 	for (int i=0; i<3; i++){
-		X[i].simplify();
+		assert(X[i] % abs_det_latvecs == 0);
+		X[i] /= abs_det_latvecs;
 	}
 }
 

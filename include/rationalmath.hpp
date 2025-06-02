@@ -1,11 +1,6 @@
 #pragma once
-#include "modulus.hpp"
 #include "vec3.hpp"
-#include "modulus.hpp"
 
-#include <array>
-#include <cassert>
-#include <concepts>
 #include <cstdint>
 #include <iostream>
 #include <stdexcept>
@@ -165,6 +160,33 @@ inline void from_json(const json& j, Rational& r) {
 	r = find_nearest_rational(tmp, 1000);
 }
 
+
+
+
+inline bool operator<(rational::Rational a, rational::Rational b){
+    a.make_denom_positive();
+    b.make_denom_positive();
+    return a.num * b.denom < b.num*a.denom;
+}
+
+
+inline bool operator>(rational::Rational a, rational::Rational b){
+    a.make_denom_positive();
+    b.make_denom_positive();
+    return a.num * b.denom > b.num*a.denom;
+}
+
+inline rational::Rational min(rational::Rational a, rational::Rational b){
+    return (a<b) ? a : b;
+}
+
+
+inline rational::Rational max(rational::Rational a, rational::Rational b){
+    return (a>b) ? a : b;
+}
+
+
+// end namespace rational
 };
 
 

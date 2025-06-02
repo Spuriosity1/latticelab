@@ -1,4 +1,5 @@
 #include "rationalmath.hpp"
+#include "modulus.hpp"
 #include <limits>
 #include <stdexcept>
 namespace rational {
@@ -173,6 +174,7 @@ rmat33 inv(const rmat33& A){
 
 	return retval;
 }
+
 
 
 

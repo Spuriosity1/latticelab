@@ -57,9 +57,9 @@ namespace CellGeometry {
 	inline void write_data(const PeriodicPointLattice<Point>& lat, nlohmann::json& j){
 		write_data(static_cast<const PeriodicAbstractLattice&>(lat), j);
 		j["points"] = {};
-		for (const auto& point: lat.get_points()){
-			nlohmann::json pt = {{"pos", point.position}};	
-			store_coboundary<0>(point, pt);
+		for (const auto [_, point] : lat.points){
+			nlohmann::json pt = {{"pos", point->position}};	
+			store_coboundary<0>(*point, pt);
 			j["points"].push_back(pt);
 		}
 	}
@@ -71,11 +71,11 @@ namespace CellGeometry {
 	inline void write_data(const PeriodicLinkLattice<Point, Link>& lat, nlohmann::json& j){
 		write_data(static_cast<const PeriodicPointLattice<Point>&>(lat), j);
 		j["links"] = {};
-		for (const auto& link : lat.get_links()){
+		for (const auto& [_,link] : lat.links){
 			nlohmann::json ln = {};
-			ln["pos"] = link.position;
-			store_coboundary<1>(link, ln);
-			store_boundary<1>(link, ln);
+			ln["pos"] = link->position;
+			store_coboundary<1>(*link, ln);
+			store_boundary<1>(*link, ln);
 			j["links"].push_back(ln);
 		}
 	}
@@ -89,11 +89,11 @@ namespace CellGeometry {
 			nlohmann::json& j){
 		write_data(static_cast<const PeriodicLinkLattice<Point, Link>&>(lat), j);
 		j["plaqs"] = {};
-		for (const auto& plaq : lat.get_plaqs()){
+		for (const auto& [_, plaq] : lat.plaqs){
 			nlohmann::json pl = {};
-			pl["pos"] =  plaq.position;
-			store_coboundary<2>(plaq, pl);
-			store_boundary<2>(plaq, pl);
+			pl["pos"] =  plaq->position;
+			store_coboundary<2>(*plaq, pl);
+			store_boundary<2>(*plaq, pl);
 			j["plaqs"].push_back(pl);
 		}
 	}
@@ -108,9 +108,9 @@ namespace CellGeometry {
 			nlohmann::json& j){
 		write_data(static_cast<const PeriodicPlaqLattice<Point, Link, Plaq>&>(lat), j);
 		j["vols"] = {};
-		for (const auto& vol : lat.get_vols()){
-			nlohmann::json v = {{"pos", vol.position}};
-			store_boundary<3>(vol, v);
+		for (auto [_, vol] : lat.vols){
+			nlohmann::json v = {{"pos", vol->position}};
+			store_boundary<3>(*vol, v);
 			j["vols"].push_back(v);
 		}
 	}

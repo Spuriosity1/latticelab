@@ -24,3 +24,10 @@ jsonllitest = executable('jsonllitest', 'json_lli_test.cpp',
 map_bench = executable('bench_map_type', 'bench_map_type.cpp',
   include_directories: g_include
   )
+
+
+bench_cellspec = executable('bench_cellspec', 'bench_cellspec.cpp',
+  include_directories: g_include,
+  dependencies: [main_deps, test_deps],
+  link_with: [lattice_indexing_lib, test_dep_libs]
+  )

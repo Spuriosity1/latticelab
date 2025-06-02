@@ -10,6 +10,7 @@ typedef arma::imat33 imat33_t;
 */
 #include "vec3.hpp" 
 #include "rationalmath.hpp"
+#include "SortedVectorMap.hpp"
 
 typedef vector3::vec3<rational::Rational> ipos_t;
 typedef vector3::vec3<long long int> ivec3_t;
@@ -21,14 +22,20 @@ struct Cell;
 
 // Implementation of an n-chain: a std::map realises a sparse vector of int
 template <int order>
-using Chain = std::map<Cell<order>*, int>;
+// using Chain = std::map<Cell<order>*, int>;
+// using Chain = std::unordered_map<Cell<order>*, int>;
+using Chain = SortedVectorMap<Cell<order>*, int>;
+
+
+// using SparseMap = SortedVectorMap<Key, Tp>;
+//using SparseMap = FilteredVector<Key, Tp>;
 
 template <int order>
 inline void cleanup_chain(Chain<order>& c){
 	// delete any canceled cells
-	for (auto it = c.cbegin(); it != c.cend(); ) {
+	for (auto it = c.begin(); it != c.end(); ) {
 		if ( it->second == 0) {
-			c.erase(it++);
+			c.erase(it);
 		} else {
 			++it;
 		}

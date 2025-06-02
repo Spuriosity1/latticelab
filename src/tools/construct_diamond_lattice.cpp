@@ -5,7 +5,6 @@
 #include "preset_cellspecs.hpp"
 #include <UnitCellSpecifier.hpp>
 #include <algorithm>
-#include <random>
 #include <sstream>
 #include <stack>
 #include <stdexcept>
@@ -93,8 +92,8 @@ struct bfs_node {
 inline std::vector<Chain<1>> find_paths_neighbours(Lattice& lat, Point* origin, Point* finish, unsigned len){
     // finds all chains of length 'len' connecting p0 to p1
     std::vector<Chain<1>> res;
-    for (auto& l : lat.get_links()){
-        l.visited = false;
+    for (auto [_, l] : lat.links){
+        l->visited = false;
     }
     std::stack<bfs_node> to_visit;
     to_visit.push(bfs_node(origin, Chain<1>()));
@@ -131,13 +130,13 @@ inline std::vector<std::set<Vol*>> find_connected_components(Lattice& lat){
     // greedy algorithm -- traverse via all boundaries recursively
     std::stack<Vol*> vols;
 
-    for (auto& [_,v] : lat.vols){
+    for (const auto& [_,v] : lat.vols){
         v->visited = false;
     }
 
     std::vector<std::set<Vol*>> retval;
 
-    for (auto& [_,v] : lat.vols){
+    for (const auto& [_,v] : lat.vols){
         if (!v->visited){
             retval.push_back({});
             // start a DFS

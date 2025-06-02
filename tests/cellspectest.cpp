@@ -290,12 +290,12 @@ TEST_F(PyroPointsTest, ConstructPointPrim){
 			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
 			);
 	std::unordered_set<ipos_t> positions;
-	for (const auto& point : lat.get_points()){
-		auto& R = point.position;
+	for (const auto [_, point] : lat.points){
+		auto& R = point->position;
 		positions.insert(R);
-		EXPECT_EQ(&lat.get_point_at(R), &point);
+		EXPECT_EQ(&lat.get_point_at(R), point);
 		EXPECT_EQ(&lat.get_point_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
-				&point);
+				point);
 	}
 	ASSERT_EQ(positions.size(), lat.points.size());
 }
@@ -305,12 +305,12 @@ TEST_F(PyroPointsTest, ConstructPointCube){
 			imat33_t::from_cols({-1,1,1},{1,-1,1},{1,1,-1})
 			);
 	std::unordered_set<ipos_t> positions;
-	for (const auto& point: lat.get_points()){
-		auto& R = point.position;
+	for (const auto [_, point]: lat.points){
+		auto& R = point->position;
 		positions.insert(R);
-		EXPECT_EQ(&lat.get_point_at(R), &point);
+		EXPECT_EQ(&lat.get_point_at(R), point);
 		EXPECT_EQ(&lat.get_point_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
-				&point);
+				point);
 	}
 	ASSERT_EQ(positions.size(), lat.points.size());
 }
@@ -358,12 +358,12 @@ TEST_F(PyroLinksTest, ConstructLinkPrim){
 			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
 			);
 	std::unordered_set<ipos_t> positions;
-	for (const auto& l:lat.get_links()){
-		const auto R = l.position;
+	for (const auto [_, l] :lat.links){
+		const auto R = l->position;
 		positions.insert(R);
-		EXPECT_EQ(&lat.get_link_at(R), &l);
+		EXPECT_EQ(&lat.get_link_at(R), l);
 		EXPECT_EQ(&lat.get_link_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
-				&l);
+				l);
 	}
 	ASSERT_EQ(positions.size(), lat.links.size());
 }
@@ -374,12 +374,12 @@ TEST_F(PyroLinksTest, ConstructLinkCube){
 			imat33_t::from_cols({-1,1,1},{1,-1,1},{1,1,-1})
 			);
 	std::unordered_set<ipos_t> positions;
-	for (const auto& l:lat.get_links()){
-		const auto R = l.position;
+	for (const auto [_, l] :lat.links){
+		const auto R = l->position;
 		positions.insert(R);
-		EXPECT_EQ(&lat.get_link_at(R), &l);
+		EXPECT_EQ(&lat.get_link_at(R), l);
 		EXPECT_EQ(&lat.get_link_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
-				&l);
+				l);
 	}
 	ASSERT_EQ(positions.size(), lat.links.size());
 }
@@ -391,8 +391,8 @@ TEST_F(PyroLinksTest, LinkUniqueness){
 			);
 	std::set<const Cell<1>*> unique_links;
 
-	for (const auto& l : lat.get_links()) {
-		auto res = unique_links.insert(&l);
+	for (const auto [_, l] :lat.links){
+		auto res = unique_links.insert(l);
 		EXPECT_TRUE(res.second);
 	}
 }
@@ -409,13 +409,13 @@ TEST_F(PyroLinksTest, LinkRemoveWorks){
 	lat.erase_link(lat.links[0]);
 	lat.erase_link(lat.links[2]);
 
-	for (const auto& [i, p] : lat.links) {
+	for (const auto& [i, l] : lat.links) {
 		EXPECT_NE(i,0);
 		EXPECT_NE(i,2);
 	}
 	// ensure links got cleaned up correctly
-	for (const auto& p : lat.get_points()){
-		for (const auto& [l, m] : p.coboundary){
+	for (const auto [_, p] : lat.points){
+		for (const auto& [l, m] : p->coboundary){
 			EXPECT_NE(l, old_link0);
 			EXPECT_NE(l, old_link2);
 		}	
@@ -439,12 +439,12 @@ TEST_F(PyroPlaqsTest, ConstructPlaqPrim){
 			imat33_t::from_cols({1,0,0},{0,1,0},{0,0,1})
 			);
 	std::unordered_set<ipos_t> positions;
-	for (const auto& p : lat.get_plaqs()){
-		const auto& R = p.position;
+	for (const auto& [_, p] : lat.plaqs){
+		const auto& R = p->position;
 		positions.insert(R);
-		EXPECT_EQ(&lat.get_plaq_at(R), &p);
+		EXPECT_EQ(&lat.get_plaq_at(R), p);
 		EXPECT_EQ(&lat.get_plaq_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
-				&p);
+				p);
 	}
 	ASSERT_EQ(positions.size(), lat.plaqs.size());
 }
@@ -455,12 +455,12 @@ TEST_F(PyroPlaqsTest, ConstructPlaqCube){
 			imat33_t::from_cols({3,0,0},{0,3,0},{0,0,3})
 			);
 	std::unordered_set<ipos_t> positions;
-	for (const auto& p : lat.get_plaqs()){
-		const auto& R = p.position;
+	for (const auto& [_, p] : lat.plaqs){
+		const auto& R = p->position;
 		positions.insert(R);
-		EXPECT_EQ(&lat.get_plaq_at(R), &p);
+		EXPECT_EQ(&lat.get_plaq_at(R), p);
 		EXPECT_EQ(&lat.get_plaq_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
-				&p);
+				p);
 	}
 	ASSERT_EQ(positions.size(), lat.plaqs.size());
 }
@@ -469,11 +469,11 @@ TEST_F(PyroPlaqsTest, PlaqBoundaryClosed){
 	PeriodicPlaqLattice_std lat(cell, 
 			imat33_t::from_cols({3,0,0},{0,3,0},{0,0,3})
 			);
-	for (const auto& p : lat.get_plaqs()){
+	for (const auto& [_, p] : lat.plaqs){
 		// std::cout<<"Plaquette " << p.position <<" ";
 		// std::cout<<"Boundary = "<<p.boundary<<"\n";
-		EXPECT_FALSE(p.boundary == Chain<1>());
-		auto dB = d(p.boundary);
+		EXPECT_FALSE(p->boundary == Chain<1>());
+		auto dB = d(p->boundary);
 		EXPECT_TRUE(dB== Chain<0>());
 	}
 }
@@ -483,11 +483,11 @@ TEST_F(PyroPlaqsTest, PointCoboundaryClosed){
 	PeriodicPlaqLattice_std lat(cell, 
 			imat33_t::from_cols({3,0,0},{0,3,0},{0,0,3})
 			);
-	for (const auto& p : lat.get_points()){
+	for (const auto [_, p] : lat.points){
 		// std::cout<<"Point " << p.position <<" ";
 		// std::cout<<"Coboundary = "<<p.coboundary<<"\n";
-		EXPECT_FALSE(p.coboundary == Chain<1>());
-		auto DB = co_d(p.coboundary);
+		EXPECT_FALSE(p->coboundary == Chain<1>());
+		auto DB = co_d(p->coboundary);
 		EXPECT_TRUE(DB== Chain<2>());
 	}
 }
@@ -521,12 +521,12 @@ TEST_F(PyroVolTest, ConstructVolPrim){
 			imat33_t::from_cols({1,0,0}, {0,1,0}, {0,0,1})
 			);
 	std::unordered_set<ipos_t> positions;	
-	for (const auto& p : lat.get_vols()){
-		const auto& R = p.position;
+	for (const auto& [_, p] : lat.vols){
+		const auto& R = p->position;
 		positions.insert(R);
-		EXPECT_EQ(&lat.get_vol_at(R), &p);
+		EXPECT_EQ(&lat.get_vol_at(R), p);
 		EXPECT_EQ(&lat.get_vol_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
-				&p);
+				p);
 	}
 	ASSERT_EQ(positions.size(), lat.vols.size());
 }
@@ -537,12 +537,12 @@ TEST_F(PyroVolTest, ConstructVolCube){
 			imat33_t::from_cols({3,0,0},{0,3,0},{0,0,3})
 			);
 	std::unordered_set<ipos_t> positions;	
-	for (const auto& p : lat.get_vols()){
-		const auto& R = p.position;
+	for (const auto& [_, p] : lat.vols){
+		const auto& R = p->position;
 		positions.insert(R);
-		EXPECT_EQ(&lat.get_vol_at(R), &p);
+		EXPECT_EQ(&lat.get_vol_at(R), p);
 		EXPECT_EQ(&lat.get_vol_at(R - lat.cell_vectors * idx3_t({-1,2,-3}) ),
-				&p);
+				p);
 	}
 	ASSERT_EQ(positions.size(), lat.vols.size());
 }
@@ -552,11 +552,11 @@ TEST_F(PyroVolTest, VolBoundaryClosed){
 	PeriodicVolLattice_std lat(cell, 
 			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
 			);
-	for (const auto& v : lat.get_vols()){
+	for (const auto& [_, v] : lat.vols){
 		// std::cout<<"Vol " << v.position <<" ";
 		// std::cout<<"Boundary = "<<v.boundary<<"\n";
-		EXPECT_FALSE(v.boundary == Chain<2>());
-		auto dB = d(v.boundary);
+		EXPECT_FALSE(v->boundary == Chain<2>());
+		auto dB = d(v->boundary);
 		EXPECT_TRUE(dB== Chain<1>());
 	}
 }
@@ -566,11 +566,11 @@ TEST_F(PyroVolTest, LinkCoboundaryClosed){
 	PeriodicVolLattice_std lat(cell, 
 			imat33_t::from_cols({-3,3,3},{3,-3,3},{3,3,-3})
 			);
-	for (const auto& l : lat.get_links()){
+	for (const auto& [_, l] : lat.links){
 		// std::cout<<"Vol " << v.position <<" ";
 		// std::cout<<"Boundary = "<<v.boundary<<"\n";
-		EXPECT_FALSE(l.coboundary == Chain<2>());
-		auto DB = co_d(l.coboundary);
+		EXPECT_FALSE(l->coboundary == Chain<2>());
+		auto DB = co_d(l->coboundary);
 		EXPECT_TRUE(DB == Chain<3>());
 	}
 }
@@ -583,7 +583,7 @@ TEST_F(PyroVolTest, VolRemoveWorks){
 	lat.erase_vol(lat.vols[0]);
 	lat.erase_vol(lat.vols[2]);
 
-	for (const auto& [i, p] : lat.vols) {
+	for (const auto& [i, _] : lat.vols) {
 		EXPECT_FALSE(i==0);
 		EXPECT_FALSE(i==2);
 	}

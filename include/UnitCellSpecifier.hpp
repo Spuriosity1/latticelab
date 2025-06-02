@@ -143,12 +143,11 @@ protected:
 		return (R[0].denom != 0) && (R[1].denom != 0) && (R[2].denom != 0);
 	}
 
+private:
 	void assert_valid_position(const ipos_t& R){
-#ifdef DEBUG
 		if ( !is_valid_position(R) ) {
 			throw std::invalid_argument("spec has invalid location");
 		}
-#endif
 	}
 
 

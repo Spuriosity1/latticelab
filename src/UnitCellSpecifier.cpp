@@ -5,6 +5,13 @@
 #include <sstream>
 #include <stdexcept>
 
+
+#ifdef DEBUG
+#define ASSERT_VALID_POS(R) assert_valid_position(R);
+#else
+#define ASSERT_VALID_POS(R);
+#endif
+
 using namespace rational;
 
 namespace CellGeometry {
@@ -45,25 +52,25 @@ sl_t UnitCellSpecifier::sl_of_vol(const ipos_t& R_) const {
 // Consider upgrading to binary search or better
 bool UnitCellSpecifier::is_point(const ipos_t& R_){
 	auto R = wrap_copy(R_);
-	assert_valid_position(R);
+	ASSERT_VALID_POS(R);
 	for (size_t i=0; i<points.size(); i++) { if (points[i].position == R) return true; }
 	return false;
 }
 bool UnitCellSpecifier::is_link(const ipos_t& R_){
 	auto R = wrap_copy(R_);
-	assert_valid_position(R);
+	ASSERT_VALID_POS(R);
 	for (size_t i=0; i<links.size(); i++) { if (links[i].position == R) return true; }
 	return false;
 }
 bool UnitCellSpecifier::is_plaq(const ipos_t& R_){
 	auto R = wrap_copy(R_);
-	assert_valid_position(R);
+	ASSERT_VALID_POS(R);
 	for (size_t i=0; i<plaqs.size(); i++) { if (plaqs[i].position == R) return true; }
 	return false;
 }
 bool UnitCellSpecifier::is_vol(const ipos_t& R_){
 	auto R = wrap_copy(R_);
-	assert_valid_position(R);
+	ASSERT_VALID_POS(R);
 	for (size_t i=0; i<vols.size(); i++) { if (vols[i].position == R) return true; }
 	return false;
 }
@@ -125,13 +132,13 @@ void UnitCellSpecifier::wrap(GeometricObject& X) const {
 
 
 void UnitCellSpecifier::add_point(const PointSpec& p){
-	assert_valid_position(p.position);
+	ASSERT_VALID_POS(p.position);
 	points.push_back(p);
 	wrap(points.back());
 }
 
 void UnitCellSpecifier::add_link(const LinkSpec& p){
-	assert_valid_position(p.position);
+	ASSERT_VALID_POS(p.position);
 	links.push_back(p);
 	wrap(links.back());
 	// check that boundary is resolvable	
@@ -142,7 +149,7 @@ void UnitCellSpecifier::add_link(const LinkSpec& p){
 }
 
 void UnitCellSpecifier::add_plaq(const PlaqSpec& p){
-	assert_valid_position(p.position);
+	ASSERT_VALID_POS(p.position);
 	plaqs.push_back(p);
 	wrap(plaqs.back());
 	// check that boundary is resolvable	
@@ -153,7 +160,7 @@ void UnitCellSpecifier::add_plaq(const PlaqSpec& p){
 }
 
 void UnitCellSpecifier::add_vol(const VolSpec& p){
-	assert_valid_position(p.position);
+	ASSERT_VALID_POS(p.position);
 	vols.push_back(p);
 	wrap(vols.back());
 	// check that boundary is resolvable	

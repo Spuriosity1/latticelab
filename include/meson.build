@@ -7,7 +7,7 @@ install_headers(
 'lattice_IO.hpp',
 'modulus.hpp',
 'preset_cellspecs.hpp',
-'rationalmath.hpp',
+# 'rationalmath.hpp',
 'vec3.hpp',
 'SortedVectorMap.hpp'
 )

@@ -135,7 +135,7 @@ UnitCellSpecifier::UnitCellSpecifier(
 }
 
 void UnitCellSpecifier::wrap(ipos_t& X) const {
-	ipos_t x = latvecs_unnormed_inverse * X; // this / det(A) is the true x
+	ipos_t x = latvecs_unnormed_inverse * X; // this / |det(A)| is the true x
 	for (int i=0; i<3; i++){
 		x[i] = mod(x[i], abs_det_latvecs);
 	}

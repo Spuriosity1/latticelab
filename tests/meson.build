@@ -33,6 +33,12 @@ modulotest = executable('modulotest', ['modtest.cpp', test_main],
   link_with: [lattice_indexing_lib, test_dep_libs]
   )
 
+supercelltest=executable('supercelltest', ['supercelltest.cpp', test_main],
+  include_directories: g_include,
+  dependencies: [main_deps, test_deps],
+  link_with: [lattice_indexing_lib, test_dep_libs]
+  )
+
 rationaltest = executable('rationaltest', ['rationaltest.cpp', test_main],
   include_directories: g_include,
   dependencies: [main_deps, test_deps],

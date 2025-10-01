@@ -43,20 +43,20 @@ struct PeriodicAbstractLattice {
 			) : 
 	// Smith decopose the supercell spec to find a primitive cell that aligns 
 	// nicely with the supercell
-	LDW(ComputeSmithNormalForm( to_snfmat(supercell))),
+	LDW(ComputeSmithNormalForm( to_snfmat(supercell))), // L supercell W = D
 	// Store the reparameterised supercell
 	cell_vectors(specified_primitive.latvecs 
 			* imat33_t::from_other(supercell)),
 	// Cell vectors only used for indexing
 	index_cell_vectors(specified_primitive.latvecs 
-			* imat33_t::from_other(supercell * LDW.R)),
+			* imat33_t::from_other(supercell * LDW.R)), // equivalent to L^-1 D
 	num_primitive(LDW.D[0]*LDW.D[1]*LDW.D[2]),
 	// Store the new primitve cell
 	primitive_spec( specified_primitive,  LDW.Linv )
 	{
 	}
 
-	// Size of the supercell in units of primitive cells
+	// Size of the supercell in units of (modified) primitive cells
 	inline ivec3_t size() const {return LDW.D;} 
 	inline int size(int idx) const {
 		assert(idx >= 0 && idx < 3);
@@ -67,6 +67,23 @@ struct PeriodicAbstractLattice {
 	// [0, D[0]) x [0, D[1]) x [0, D[2]) \subset Z^3
 	// Modifies its argument, leaving remainder there
 	idx3_t get_supercell_IDX(ipos_t&R);
+
+    // Returns the unwrapped (i.e. shortest) vector x - y, possibly
+    // across the periodic boundary.
+    idx3_t distance(const ipos_t&x, const ipos_t& y){
+        // Solving a * n = (x-y)
+        // a = primitive_spec.lattice_vectors
+        // n[i] = 3-index, element [(-D[i])/2, D[i]/2] where L D W = supercell
+        auto D = this->LDW.D;
+        ipos_t delta = x - y;
+        delta = this->primitive_spec.latvecs_unnormed_inverse * delta;
+        // det_a n = [det_a a^-1] delta
+        for (int i=0; i<3; i++){
+            auto offset = (-D[i]) / 2;
+            delta[i] = mod(delta[i] - offset, D[i])  + offset;
+        }
+        return this->primitive_spec.latvecs * delta;
+    }
 
 
 

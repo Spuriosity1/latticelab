@@ -53,6 +53,24 @@ It is convenient to define
  to get the simpler $R = b(D m + y) + r$
  where $y_i \in \{0, ..., D_{ii} - 1\}$
 
+# WHAT WE DO HERE
+
+The user specifies a primitive cell, $a$=`specified_primitive.cell_vectors`, 
+with its cell vectors understood as columns, as well as a supercell $Z$ such that
+$$A = a Z\,.$$
+
+We want a way to number the copies of cells, i.e. Bravais points, consistently and uniquely.
+This means solving $$X = a n$$ modulo $A n \equiv 0$. This is clunky -- in general, it's not just $n=[0,1,2,Lx] x [0,1,2,Ly]$, but something more confusing. For example, think of the equivalence classes when $a = [1 0; 0 1], Z = [2 -2; 2 2]$.
+
+Instead, for indexing we change the definition of the primitive cell to something aligned with $A$. We define the alternative vectors
+
+$a' = a L^-1 $
+
+where $L, W$ are invertible int matrices such that $LZW = D$, a diagonal matrix. 
+
+so we solve $X = a' n$ for $n$ modulo $a' D n = 0$
+
+
 # APPROACHES
 
 ## Float math

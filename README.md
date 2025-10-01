@@ -127,9 +127,6 @@ Pros (+) and cons (-):
 + - physically nearby spins have very distant memory addresses (unavoidable)
 
 ```c++
-
-
-/*
 struct spin: public Cell<1> {
 	double heis[3];
 

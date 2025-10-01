@@ -18,6 +18,7 @@ typedef PeriodicLinkLattice<Cell<0>,Cell<1>> PeriodicLinkLattice_std;
 typedef PeriodicPlaqLattice<Cell<0>,Cell<1>,Cell<2>> PeriodicPlaqLattice_std;
 typedef PeriodicVolLattice<Cell<0>,Cell<1>,Cell<2>,Cell<3>> PeriodicVolLattice_std;
 
+
 class CubicPointsTest : public testing::Test {
 	protected:
 		CubicPointsTest()

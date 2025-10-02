@@ -34,6 +34,19 @@ using SparseMap = std::unordered_map<Key, Tp>;
 // using SparseMap = SortedVectorMap<Key, Tp>;
 //using SparseMap = FilteredVector<Key, Tp>;
 
+inline imat33_t make_positive(const imat33_t& v) {
+    return det(v) > 0 ? v : -1 * v;
+}
+
+
+size_t d2_raw(const ipos_t& x){
+    size_t res=0;
+    for (int j=0; j<3; j++){
+        res += x[j]*x[j];
+    }
+    return res;
+}
+
 // Does the main part of the 3d indexing work
 // Represents a periodic region of space with nothing filling it
 struct PeriodicAbstractLattice {
@@ -48,12 +61,20 @@ struct PeriodicAbstractLattice {
 	cell_vectors(specified_primitive.latvecs 
 			* imat33_t::from_other(supercell)),
 	// Cell vectors only used for indexing
-	index_cell_vectors(specified_primitive.latvecs 
-			* imat33_t::from_other(supercell * LDW.R)), // equivalent to L^-1 D
-	num_primitive(LDW.D[0]*LDW.D[1]*LDW.D[2]),
+	index_cell_vectors(specified_primitive.latvecs
+			* imat33_t::from_other(supercell) * LDW.R), // equivalent to L^-1 D
+    num_primitive(LDW.D[0]*LDW.D[1]*LDW.D[2]),
 	// Store the new primitve cell
 	primitive_spec( specified_primitive,  LDW.Linv )
 	{
+        // primitive_spec <- prim L^-1
+        // A <- prim L^-1 D
+        // A <- primitive_spec * D
+
+        // sanity checks
+        auto D = LDW.L * supercell * LDW.R;
+        for (int i=0; i<3; i++) assert(D(i,i) == LDW.D[i]);
+        assert(index_cell_vectors == primitive_spec.latvecs * D);
 	}
 
 	// Size of the supercell in units of (modified) primitive cells
@@ -68,22 +89,75 @@ struct PeriodicAbstractLattice {
 	// Modifies its argument, leaving remainder there
 	idx3_t get_supercell_IDX(ipos_t&R);
 
-    // Returns the unwrapped (i.e. shortest) vector x - y, possibly
-    // across the periodic boundary.
-    idx3_t distance(const ipos_t&x, const ipos_t& y){
-        // Solving a * n = (x-y)
-        // a = primitive_spec.lattice_vectors
-        // n[i] = 3-index, element [(-D[i])/2, D[i]/2] where L D W = supercell
-        auto D = this->LDW.D;
-        ipos_t delta = x - y;
-        delta = this->primitive_spec.latvecs_unnormed_inverse * delta;
-        // det_a n = [det_a a^-1] delta
-        for (int i=0; i<3; i++){
-            auto offset = (-D[i]) / 2;
-            delta[i] = mod(delta[i] - offset, D[i])  + offset;
-        }
-        return this->primitive_spec.latvecs * delta;
+    void print_diagnostics() const {
+        std::cout<<"LDW\n\n L=" << LDW.L << "\nD=" << LDW.D <<"\n\nR=" << LDW.R <<"\n";
+        std::cout<<"|det(a)| = " <<primitive_spec.abs_det_latvecs<<"\n";
+        std::cout<<"primitive_spec.latvecs = " << primitive_spec.latvecs<<"\n";
+        std::cout<<"index_vecs = " << index_cell_vectors<<"\n";
     }
+
+
+    void distance_bruteforce(const ipos_t& delta, ipos_t& res, size_t& min_dist) const {
+        static ipos_t tmp;
+        // just bruteforce check the whole thing stupidly
+        min_dist = std::numeric_limits<size_t>::max();
+        for (int ix=-1; ix<=1; ix++){
+            for (int iy=-1; iy<=1; iy++){
+                for (int iz=-1; iz<=1; iz++){
+                    tmp = delta - cell_vectors * ipos_t({ix,iy,iz});
+                    auto dist = d2_raw(tmp);
+                    if (dist < min_dist){
+                        min_dist = dist;
+                        res = tmp;
+                    }
+                }
+            }
+        }
+    }
+
+    ipos_t distance(const ipos_t& x, const ipos_t& y) const {
+        ipos_t res;
+        size_t min_dist;
+        distance_bruteforce(x-y, res, min_dist);
+        return res;
+    }
+
+
+    size_t d2(const ipos_t& x, const ipos_t& y) const {
+        ipos_t res;
+        size_t min_dist;
+        distance_bruteforce(x-y, res, min_dist);
+        return min_dist;
+    }
+
+        
+
+//        // Map into primitive integer coordinates
+//        ipos_t delta_scaled = this->primitive_spec.latvecs_unnormed_inverse * delta;
+//        const int detA = this->primitive_spec.abs_det_latvecs;
+//
+//        ipos_t m_scaled = delta_scaled;
+//
+//        // Wrap into [-D/2, D/2]
+//        for (int i = 0; i < 3; i++) {
+//            int D = this->LDW.D[i]*detA;
+//            m_scaled[i] = ((m_scaled[i] % D) + D) % D;
+//            if (m_scaled[i] * 2 >= D) {
+//                m_scaled[i] -= D;
+//            }
+//        }
+//
+//        //ipos_t n_wrapped = this->LDW.R * m_scaled;
+//        ipos_t n_wrapped = m_scaled;
+//        ipos_t delta_unwrapped = this->primitive_spec.latvecs * n_wrapped;
+//
+//        for (int i = 0; i < 3; i++) {
+//            assert(delta_unwrapped[i] % detA == 0);
+//            delta_unwrapped[i] /= detA;
+//        }
+//
+//        return delta_unwrapped;
+//    }
 
 
 

@@ -99,31 +99,26 @@ constexpr imat33_t unnormed_inverse(const imat33_t& A){
 }
 
 
-constexpr imat33_t make_positive(const imat33_t& mat){
-	if (det(mat) < 0) { return -1*mat; }
-	return mat;
-}
-
 // constructors
 //
 UnitCellSpecifier::UnitCellSpecifier(const imat33_t& lattice_vectors_) :
-	latvecs(make_positive(lattice_vectors_)),
+	latvecs(lattice_vectors_),
 	latvecs_unnormed_inverse( unnormed_inverse(latvecs) ),
 	abs_det_latvecs(det(latvecs))
 	//UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
 //	point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
-{}
+{if (abs_det_latvecs < 0) throw std::runtime_error("Left handed coordinate system"); }
 
 UnitCellSpecifier::UnitCellSpecifier(
 		const UnitCellSpecifier& other,
 		const imat33_t& cellspec) : 
-	latvecs(make_positive(other.latvecs * imat33_t::from_other(cellspec))),
+	latvecs(other.latvecs * imat33_t::from_other(cellspec)),
 	latvecs_unnormed_inverse( unnormed_inverse(latvecs) ),
 	abs_det_latvecs(det(latvecs))
 	// UPV(ComputeSmithNormalForm(to_snfmat(lattice_vectors)))
 	// point_index(UPV.D),link_index(UPV.D),plaq_index(UPV.D),vol_index(UPV.D)
 {
-	if (abs(det(cellspec)) != 1) {
+	if (det(cellspec) != 1) {
 		throw std::invalid_argument(
 				"cellspec of re-parameterised unit cell must have determinant 1");
 	}

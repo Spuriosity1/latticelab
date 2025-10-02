@@ -59,13 +59,25 @@ struct SNF_decomp {
 		D(from_snfmat(decomp.D).diagonal()),
 		R(from_snfmat(decomp.R)),
 		Rinv(from_snfmat(SmithNormalFormCalculator::inverse(decomp.R)))
-	{}
+	{
+        if (det(L) < 0){
+            L *= -1;
+            Linv *= -1;
+            D *= -1;
+        }
 
-	const imat33_t L;
-	const imat33_t Linv;
-	const ivec3_t D;
-	const imat33_t R;
-	const imat33_t Rinv;
+        if (det(R) < 0){
+            R *= -1;
+            Rinv *= -1;
+            D *= -1;
+        }
+    }
+
+	imat33_t L;
+	imat33_t Linv;
+	ivec3_t D;
+	imat33_t R;
+	imat33_t Rinv;
 };
 
 struct UnitCellSpecifier {	

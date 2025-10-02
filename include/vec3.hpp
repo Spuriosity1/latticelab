@@ -18,6 +18,15 @@ template <typename T>
 struct vec3 {
 	constexpr vec3() = default;
 	constexpr vec3(const vec3&) = default;
+
+    template<typename S>
+    requires std::convertible_to<S, T>
+    constexpr vec3(const vec3<S>& other){
+        m_x[0] = static_cast<T>(other[0]);
+        m_x[1] = static_cast<T>(other[1]);
+        m_x[2] = static_cast<T>(other[2]);
+    }
+
 	constexpr vec3(T x,T y,T z){
 		m_x[0] = x;
 		m_x[1] = y;
@@ -187,6 +196,22 @@ struct mat33 {
 		return retval;
 	}
 
+    constexpr vec3<T> col(int i) const {
+        return vec3<T>(m_x[i],m_x[3+i],m_x[6+i]);
+    }
+
+    constexpr vec3<T> row(int i) const {
+        return vec3<T>(m_x[3*i],m_x[3*i+1],m_x[3*i+1]);
+    }
+
+    static constexpr mat33 eye() {
+        mat33 retval;
+        retval(0,0) = 1;
+        retval(1,1) = 1;
+        retval(2,2) = 1;
+        return retval;
+    }
+
 	vec3<T> operator*(const vec3<T>& v) const {
 		vec3<T> res;
 		res[0] = __dot(m_x, v.m_x);
@@ -251,6 +276,16 @@ mat33<S> operator*(T alpha, const mat33<S>& v){
     mat33<S> copy(v);
 	copy *= static_cast<S>(alpha);
 	return copy;
+}
+
+
+template <typename T, typename S>
+requires std::convertible_to<S, T>
+bool operator==(const mat33<T>& a, const mat33<S>& b){
+    for (int i=0; i<9; i++){
+        if (a[i] != b[i]) return false;
+    }
+    return true;
 }
 
 // JSON IO

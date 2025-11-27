@@ -281,6 +281,20 @@ mat33<S> operator*(T alpha, const mat33<S>& v){
 
 template <typename T, typename S>
 requires std::convertible_to<S, T>
+vec3<T> operator*(vec3<T> v, const mat33<S>& M){
+    vec3<T> u{0,0,0};
+    for (int i=0;i<3;i++){
+        for (int j=0; j<3; j++){
+            u[i] +=  v[j] * M(j,i);
+        }
+    }
+
+	return u;
+}
+
+
+template <typename T, typename S>
+requires std::convertible_to<S, T>
 bool operator==(const mat33<T>& a, const mat33<S>& b){
     for (int i=0; i<9; i++){
         if (a[i] != b[i]) return false;

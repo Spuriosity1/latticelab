@@ -39,7 +39,7 @@ inline imat33_t make_positive(const imat33_t& v) {
 }
 
 
-size_t d2_raw(const ipos_t& x){
+inline size_t d2_raw(const ipos_t& x){
     size_t res=0;
     for (int j=0; j<3; j++){
         res += x[j]*x[j];
@@ -311,7 +311,9 @@ struct PeriodicPointLattice : public PeriodicAbstractLattice {
 	}
 
 	// const accessors	
-	inline const Point& get_point_at(const ipos_t& R) const { return get_point_at(R); }
+	inline const Point& get_point_at(const ipos_t& R) const { 
+		return *points.at(get_point_idx_at(R));
+    }
 //	inline const Point& get_point_at(const idx3_t& I, sl_t sl) const { return get_point_at(I, sl);}
 
 	// Tests if point exists in the map (slow; in principle can do in log time if we know spin* are sorted)
@@ -412,7 +414,9 @@ struct PeriodicLinkLattice : public PeriodicPointLattice<Point>
 		return *links.at(get_link_idx_at(R));
 	}
 
-	inline const Link& get_link_at(const ipos_t& R) const { return get_link_at(R); }
+	inline const Link& get_link_at(const ipos_t& R) const {
+		return *links.at(get_link_idx_at(R));
+    }
 
 	// Deletes a link (and erases corresponding coboundary terms in point)
 	void erase_link(Link* link_ptr){
@@ -542,7 +546,9 @@ struct PeriodicPlaqLattice : public PeriodicLinkLattice<Point,Link>
 	}
 
 	// const accessors	
-	inline const Plaq& get_plaq_at(const ipos_t& R) const { return get_plaq_at(R); }
+	inline const Plaq& get_plaq_at(const ipos_t &R) const {
+		return *plaqs.at(get_plaq_idx_at(R));
+	}
 
 
 	// Tests if plaq exists in the map (slow; in principle can do in log time if we know spin* are sorted)
@@ -685,7 +691,9 @@ struct PeriodicVolLattice : public PeriodicPlaqLattice<Point,Link,Plaq>
 	}
 
 	// const accessors	
-	inline const Vol& get_vol_at(const ipos_t& R) const { return get_vol_at(R); }
+	inline const Vol& get_vol_at(const ipos_t &R) const {
+		return *vols.at(get_vol_idx_at(R));
+	}
 
 
 	// Tests if vol exists in the map (slow; in principle can do in log time if we know spin* are sorted)

@@ -45,7 +45,61 @@ TEST(AbstractTest, IndexVecsExpected) {
 
         EXPECT_EQ(lat.index_cell_vectors, lat.primitive_spec.latvecs * D);
     }
+
 }
+
+
+TEST(AbstractTest, SingularSupercellThrows) {
+    UnitCellSpecifier cell(imat33_t::from_cols({0,4,4},{4,0,4}, {4,4,0}));
+    EXPECT_THROW(
+    PeriodicAbstractLattice lat(cell, imat33_t::from_cols({-2,2,2}, {3,-3,0}, {0, 0, 4})),
+    std::out_of_range);
+    
+}
+
+
+
+TEST(AbstractTest, CellIterator1) {
+    UnitCellSpecifier cell(imat33_t::from_cols({0,4,4},{4,0,4}, {4,4,0}));
+    PeriodicAbstractLattice lat(cell, imat33_t::from_cols({-3,3,3}, {3,-3,3}, {3,3,-3}));
+    
+    auto I = lat.IDX_begin();
+	
+    idx3_t IDX = {0,0,0};
+    for (IDX[0]=0; IDX[0]<lat.size(0); IDX[0]++){
+    for (IDX[1]=0; IDX[1]<lat.size(1); IDX[1]++){
+    for (IDX[2]=0; IDX[2]<lat.size(2); IDX[2]++){
+        ASSERT_NE(I, lat.IDX_end());
+        EXPECT_EQ(*I, IDX);
+        I++;
+    }
+    }
+    }
+    std::cout << *I << " ?= " << *lat.IDX_end() << std::endl;
+    ASSERT_EQ(I, lat.IDX_end());
+}
+
+
+TEST(AbstractTest, CellIterator2) {
+    UnitCellSpecifier cell(imat33_t::from_cols({1, -2, 2}, {3, 1, 3}, {0, 0, 1}));
+    PeriodicAbstractLattice lat(cell, imat33_t::from_cols({-2,2,2}, {3,-3,0}, {1, 0, 4}));
+    
+    auto I = lat.IDX_begin();
+	
+    idx3_t IDX = {0,0,0};
+    for (IDX[0]=0; IDX[0]<lat.size(0); IDX[0]++){
+    for (IDX[1]=0; IDX[1]<lat.size(1); IDX[1]++){
+    for (IDX[2]=0; IDX[2]<lat.size(2); IDX[2]++){
+        ASSERT_NE(I, lat.IDX_end());
+        EXPECT_EQ((*I), IDX);
+        I++;
+    }
+    }
+    }
+    std::cout << *I << " ?= " << *lat.IDX_end() << std::endl;
+    ASSERT_EQ(I, lat.IDX_end());
+}
+
 
 TEST(AbstractTest, DistanceCubicSmoke) {
     UnitCellSpecifier cell(imat33_t::from_cols({1, 0, 0}, {0, 1, 0}, {0, 0, 1}));

@@ -47,6 +47,69 @@ inline size_t d2_raw(const ipos_t& x){
     return res;
 }
 
+class PrimitiveCellIterator { 
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = idx3_t;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const idx3_t*;
+    using reference = const idx3_t&;
+
+private:
+    idx3_t current_;
+    idx3_t dimensions_;
+    bool at_end_;
+
+public:
+    PrimitiveCellIterator(const idx3_t& dims, bool end = false)
+        : current_{0, 0, 0}, dimensions_(dims), at_end_(end) {
+        if (at_end_) {
+            current_ = {dims[0], 0, 0}; // Past-the-end position
+        }
+    }
+
+    reference operator*() const { return current_; }
+    pointer operator->() const { return &current_; }
+
+    PrimitiveCellIterator& operator++() {
+        if (at_end_) return *this;
+
+        // Increment in the standard order: [2] fastest, [0] slowest
+        current_[2]++;
+        if (current_[2] >= dimensions_[2]) {
+            current_[2] = 0;
+            current_[1]++;
+            if (current_[1] >= dimensions_[1]) {
+                current_[1] = 0;
+                current_[0]++;
+                if (current_[0] >= dimensions_[0]) {
+                    at_end_ = true;
+                }
+            }
+        }
+        return *this;
+    }
+
+    PrimitiveCellIterator operator++(int) {
+        PrimitiveCellIterator tmp = *this;
+        ++(*this);
+        return tmp;
+    }
+
+    bool operator==(const PrimitiveCellIterator& other) const {
+        if (at_end_ && other.at_end_) return true;
+        if (at_end_ != other.at_end_) return false;
+        return current_[0] == other.current_[0] &&
+               current_[1] == other.current_[1] &&
+               current_[2] == other.current_[2];
+    }
+
+    bool operator!=(const PrimitiveCellIterator& other) const {
+        return !(*this == other);
+    }
+
+};
+
 // Does the main part of the 3d indexing work
 // Represents a periodic region of space with nothing filling it
 struct PeriodicAbstractLattice {
@@ -73,7 +136,14 @@ struct PeriodicAbstractLattice {
 
         // sanity checks
         auto D = LDW.L * supercell * LDW.R;
-        for (int i=0; i<3; i++) assert(D(i,i) == LDW.D[i]);
+        for (int i=0; i<3; i++) {
+            assert(D(i,i) == LDW.D[i]);
+            if (D(i,i) <= 0) {
+                std::cerr << "D = " << LDW.D << std::endl;
+                throw std::out_of_range("Supercell specification is singular.");
+            }
+
+        }
         assert(index_cell_vectors == primitive_spec.latvecs * D);
 	}
 
@@ -158,6 +228,17 @@ struct PeriodicAbstractLattice {
 //
 //        return delta_unwrapped;
 //    }
+
+
+    // The iterator class
+    //
+    PrimitiveCellIterator IDX_begin() const {
+        return PrimitiveCellIterator({size(0), size(1), size(2)}, false);
+    }
+
+    PrimitiveCellIterator IDX_end() const {
+        return PrimitiveCellIterator({size(0), size(1), size(2)}, true);
+    }
 
 
 

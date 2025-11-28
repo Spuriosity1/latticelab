@@ -51,6 +51,11 @@ inline SmithNormalFormCalculator::Matrix<T> to_snfmat(vector3::mat33<T>m){
 	return out;
 }
 
+// convention: decomposition of a matrix A is L*A*R = D, D diagonal
+// Further: to work woth internal LIL routines, need 
+// i) all D > 0
+// ii) det L > 0
+// iii) det R > 0 ?
 struct SNF_decomp {
 	SNF_decomp(
 			SmithNormalFormCalculator::SmithNormalFormDecomposition<int64_t>decomp ) : 
@@ -60,17 +65,30 @@ struct SNF_decomp {
 		R(from_snfmat(decomp.R)),
 		Rinv(from_snfmat(SmithNormalFormCalculator::inverse(decomp.R)))
 	{
+        for (int i=0; i<3; i++){
+            if (D[i] < 0) { 
+                // left-multiply by (-1,1,1) or similar
+                for (int j=0; j<3; j++){
+                    L(i,j) *= -1;
+                }
+                D[i] *= -1;
+            }
+        }
+
         if (det(L) < 0){
             L *= -1;
             Linv *= -1;
-            D *= -1;
-        }
 
-        if (det(R) < 0){
             R *= -1;
             Rinv *= -1;
-            D *= -1;
         }
+
+//        if (det(R) < 0){
+//            R *= -1;
+//            Rinv *= -1;
+//            D *= -1;
+//        }
+
     }
 
 	imat33_t L;

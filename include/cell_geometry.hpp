@@ -242,13 +242,13 @@ struct PeriodicAbstractLattice {
 
 
 
-protected:
+public:
 	// The Smith decompositions of the supercell spec Z, for indexing purposes
 	const SNF_decomp LDW;
 	inline size_t idx_from_idx3(const idx3_t&I){
 		return (I[2]*LDW.D[1] + I[1])*LDW.D[0] + I[0];
 	}
-public:
+
 	///////////////////////////////////////////////////////
 	// 3-vectors, arranged columnwise, corresponding to supercell lengths 
 	// i.e. j'th vector is cell_vectors[:, j]

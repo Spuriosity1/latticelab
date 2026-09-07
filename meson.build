@@ -77,5 +77,7 @@ pkg_mod.generate(libraries : lattice_indexing_lib,
 
 latlib_dep = declare_dependency(
   link_with : lattice_indexing_lib,
-  include_directories : g_include
+  # 'include/argparse' is exposed so that subproject consumers can do
+  # `#include <argparse.hpp>`, matching the flattened install_headers layout
+  include_directories : [g_include, include_directories('include/argparse')]
 )

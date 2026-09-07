@@ -9,10 +9,17 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 import itertools
 
 
+def wrap(x, A):
+    '''
+    Wraps point 'x' into the cell whose columns are the vectors of 'A'.
+    '''
+    Ad = np.array(A, dtype=np.float64)
+    b = np.mod(np.linalg.solve(Ad, np.asarray(x, dtype=np.float64)), 1)
+    return Ad @ b
 
 
 def plot_unitcell(data):
-    A = np.array(data['index_cell_vectors'])
+    A = np.array(data['cell_vectors'])
     aLinv = np.array(data['primitive_cell_vectors'])
 
     for f in get_faces(A):
@@ -47,10 +54,6 @@ def unwrap(dx, A):
             candidate_DX = tmp
     return candidate_DX
 
-def are_parallel(dx0, dx1, atol=1e-10):
-    return LA.norm(np.cross(dx0, dx1)) < atol
-
-
 def link2startstop(x):
     # expects 'x' to be in link format, i.e.
     # x = {'position', 'boundary': [ [r0, m0], [r1, m1])]}
@@ -70,37 +73,40 @@ def link2startstop(x):
     return np.array(r0), np.array(r1)
 
 
-def plot_directed_link(x, A):
+def link_endpoints(x, A):
+    '''
+    Wraps the link centroid and both boundary points into the specified cell
+    'A', then returns the centroid together with the shortest centroid-relative
+    vectors to each endpoint.
+    '''
     r0, r1 = link2startstop(x)
+    pos = wrap(x['pos'], A)
+    dx0 = unwrap(wrap(r0, A) - pos, A)
+    dx1 = unwrap(wrap(r1, A) - pos, A)
+    return pos, dx0, dx1
 
-    dx0, dx1 = (r0 - x['pos']), (r1 - x['pos'])
 
-    if not are_parallel(dx0, dx1):
-        dx0 = unwrap(dx0, A)
-        dx1 = unwrap(dx1, A)
-
-    ax.quiver(*r0, *(-dx0), color='k')
-    ax.quiver(*r1, *(-dx1), color='k', arrow_length_ratio=0)
+def plot_directed_link(x, A):
+    pos, dx0, dx1 = link_endpoints(x, A)
+    ax.quiver(*(pos + dx0), *(-dx0), color='k')
+    ax.quiver(*(pos + dx1), *(-dx1), color='k', arrow_length_ratio=0)
 
 
 def plot_undirected_link(x, A):
-    r0, r1 = link2startstop(x)
-
-    dx0, dx1 = (r0 - x['pos']), (r1 - x['pos'])
-
-    if not are_parallel(dx0, dx1):
-        dx0 = unwrap(dx0, A)
-        dx1 = unwrap(dx1, A)
-
-    ax.quiver(*r0, *(-dx0), color='k', arrow_length_ratio=0)
-    ax.quiver(*r1, *(-dx1), color='k', arrow_length_ratio=0)
+    pos, dx0, dx1 = link_endpoints(x, A)
+    ax.quiver(*(pos + dx0), *(-dx0), color='k', arrow_length_ratio=0)
+    ax.quiver(*(pos + dx1), *(-dx1), color='k', arrow_length_ratio=0)
 
 
-def plot_idx(x, i):
-    ax.text(*x['pos'], "%d" % i)
+def plot_idx(x, i, pos=None):
+    if pos is None:
+        pos = x['pos']
+    ax.text(*pos, "%d" % i)
 
-def plot_pos(x):
-    ax.text(*x['pos'], "%d %d %d" % tuple(l for l in x['pos']))
+def plot_pos(x, pos=None):
+    if pos is None:
+        pos = x['pos']
+    ax.text(*pos, "%d %d %d" % tuple(l for l in x['pos']))
 
 def plot_points(data, args):
     point_data = data['points']
@@ -109,20 +115,23 @@ def plot_points(data, args):
         print("No points in latfile.")
         return
 
+    A = np.array(data['cell_vectors'])
+
     xyz = []
     for i, x in enumerate(point_data):
-        xyz.append(x['pos'])
+        pos = wrap(x['pos'], A)
+        xyz.append(pos)
 
         if args.show_idx:
-            plot_idx(x, i)
+            plot_idx(x, i, pos)
         if args.show_pos:
-            plot_pos(x)
+            plot_pos(x, pos)
 
     ax.scatter(*np.array(xyz).T, color='r', marker='o')
 
 
 def plot_links(data, args):
-    A = np.array(data['index_cell_vectors'])
+    A = np.array(data['cell_vectors'])
     link_data = data['links']
 
     if link_data is None:
@@ -136,9 +145,9 @@ def plot_links(data, args):
             plot_directed_link(x, A)
 
         if args.show_idx:
-            plot_idx(x, i)
+            plot_idx(x, i, wrap(x['pos'], A))
         if args.show_pos:
-            plot_pos(x)
+            plot_pos(x, wrap(x['pos'], A))
 
 
 def find_link(linkpos, link_data):
@@ -155,30 +164,31 @@ def plot_plaqs(data, args):
     if plaq_data is None:
         print("No plaquettes in latfile.")
         return
-    A = np.array(data['index_cell_vectors'])
+    A = np.array(data['cell_vectors'])
 
     for i, x in enumerate(plaq_data):
-        # Plot plaquette centroid
-        pos = np.array(x['pos'])
+        # re-wrap the plaquette centroid into the specified cell
+        pos_w = wrap(x['pos'], A)
 
         triangles = []
         for link_pos, m in x['boundary']:
             link = find_link(link_pos, link_data)
             r0, r1 = link2startstop(link)
-            # decide if we crossed a boundary
-            dx0 = unwrap(r0 - pos, A)
-            dx1 = unwrap(r1 - pos, A)
+            # wrap each boundary point into the cell, then take the shortest
+            # centroid-relative vector
+            dx0 = unwrap(wrap(r0, A) - pos_w, A)
+            dx1 = unwrap(wrap(r1, A) - pos_w, A)
 
-            triangles.append([pos, pos+dx0, pos+dx1])
+            triangles.append([pos_w, pos_w+dx0, pos_w+dx1])
 
         poly = Poly3DCollection(triangles, alpha=0.5)
         poly.set_facecolor('cyan')  # Set surface color
         ax.add_collection3d(poly)
 
         if args.show_idx:
-            plot_idx(x, i)
+            plot_idx(x, i, pos_w)
         if args.show_pos:
-            plot_pos(x)
+            plot_pos(x, pos_w)
 
 
 def plot_vols(data, args):
@@ -186,14 +196,16 @@ def plot_vols(data, args):
     if vol_data is None:
         print("No volumes in latfile.")
         return
+    A = np.array(data['cell_vectors'])
     xyz = []
     for i, x in enumerate(vol_data):
-        xyz.append(x['pos'])
+        pos = wrap(x['pos'], A)
+        xyz.append(pos)
 
         if args.show_idx:
-            plot_idx(x, i)
+            plot_idx(x, i, pos)
         if args.show_pos:
-            plot_pos(x)
+            plot_pos(x, pos)
 
     ax.scatter(*np.array(xyz).T, color='b', marker='o')
 
@@ -222,6 +234,7 @@ with open(args.file, 'r') as f:
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
+ax.axis('off')
 
 for arg in args.objects:
     func_to_run[arg](data, args)
